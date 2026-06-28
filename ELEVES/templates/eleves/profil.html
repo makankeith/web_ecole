@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --primary-light: #eff6ff;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --text-dark: #0f172a;
+        --text-main: #475569;
+        --text-muted: #94a3b8;
+        --border-color: #e2e8f0;
+        --card-bg: #ffffff;
+    }
+
+    .profil-container {
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .profil-header { 
+        background: var(--card-bg); 
+        border-radius: 20px; 
+        padding: 30px; 
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03); 
+        display: flex; 
+        align-items: center; 
+        gap: 30px; 
+        margin-bottom: 30px; 
+        border-left: 6px solid var(--primary); 
+        flex-wrap: wrap;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    .avatar-box { 
+        width: 120px; 
+        height: 120px; 
+        border-radius: 24px; 
+        background: #f8fafc; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden; 
+        border: 2px dashed var(--text-muted); 
+    }
+
+    .info-card { 
+        background: var(--card-bg); 
+        border-radius: 20px; 
+        padding: 25px; 
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.02); 
+        border: 1px solid var(--border-color); 
+    }
+
+    .info-list { list-style: none; padding: 0; margin: 0; }
+    .info-list li { 
+        padding: 14px 0; 
+        border-bottom: 1px solid #f8fafc; 
+        display: flex; 
+        align-items: center; 
+        font-size: 0.95rem; 
+        color: var(--text-main); 
+    }
+    .info-list li:last-child { border-bottom: none; }
+    .info-list i { width: 35px; color: var(--primary); font-size: 1.15rem; }
+
+    /* Onglets */
+    .nav-tabs { 
+        display: flex; 
+        border-bottom: 2px solid var(--border-color); 
+        margin-bottom: 25px; 
+        gap: 10px;
+    }
+    .tab { 
+        padding: 14px 24px; 
+        color: var(--text-muted); 
+        font-weight: 700; 
+        cursor: pointer; 
+        transition: all 0.2s ease; 
+        border-bottom: 3px solid transparent; 
+        margin-bottom: -2px;
+        font-size: 0.95rem;
+    }
+    .tab:hover { color: var(--text-main); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* Contenus des onglets */
+    .tab-pane { display: none; animation: fadeIn 0.3s ease-out; }
+    .tab-pane.active { display: block; }
+
+    /* Boutons */
+    .btn-custom {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        width: 100%;
+    }
+    .btn-dark { background: #0f172a; color: white; }
+    .btn-dark:hover { background: #1e293b; transform: translateY(-1px); }
+    .btn-outline { background: white; color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-outline:hover { background: #f8fafc; border-color: var(--text-muted); }
+</style>
+
+<div class="profil-container">
+    <div class="profil-header">
+        <div class="avatar-box">
+            {% if eleve.photo %}
+                <img src="{{ eleve.photo.url }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+                <i class="fas fa-user" style="font-size: 3.5rem; color: var(--text-muted);"></i>
+            {% endif %}
+        </div>
+        
+        <div style="flex-grow: 1;">
+            <h1 style="margin: 0 0 6px 0; color: var(--text-dark); font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em;">
+                {{ eleve.prenom }} <span style="text-transform: uppercase;">{{ eleve.nom }}</span>
+            </h1>
+            <p style="color: var(--text-main); font-size: 1.1rem; margin: 0 0 15px 0; font-weight: 500;">
+                Matricule : <span style="color: var(--text-dark); font-weight: 700;">{{ eleve.matricule|default:"En attente" }}</span>
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                {% if inscription_actuelle %}
+                    <span style="background: #d1fae5; color: #065f46; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.02em;">
+                        <i class="fas fa-check-circle"></i> Inscrit ({{ annee_active.nom }})
+                    </span>
+                    <span style="background: var(--primary-light); color: #1e40af; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em;">
+                        Classe : {{ inscription_actuelle.classe.nom }}
+                    </span>
+                {% else %}
+                    <span style="background: #fee2e2; color: #991b1b; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.02em;">
+                        <i class="fas fa-times-circle"></i> Non inscrit pour l'année en cours
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 220px;">
+            <a href="{% url 'modifier_eleve' ecole.id eleve.id %}" class="btn-custom btn-dark">
+                <i class="fas fa-edit"></i> Modifier le profil
+            </a>
+            <button class="btn-custom btn-outline">
+                <i class="fas fa-print"></i> Imprimer Certificat
+            </button>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; align-items: start;">
+        
+        <div style="display: flex; flex-direction: column; gap: 30px;">
+            <div class="info-card">
+                <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; color: var(--text-dark); font-weight: 700;">Informations Personnelles</h3>
+                <ul class="info-list">
+                    <li><i class="fas fa-calendar-alt"></i> Né(e) le : <strong style="margin-left: auto; color: var(--text-dark);">{{ eleve.date_naissance|date:"d/m/Y"|default:"Non renseigné" }}</strong></li>
+                    <li><i class="fas fa-venus-mars"></i> Sexe : <strong style="margin-left: auto; color: var(--text-dark);">{{ eleve.get_sexe_display|default:"-" }}</strong></li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3 style="margin: 0 0 20px 0; font-size: 1.2rem; color: var(--text-dark); font-weight: 700;">Contact & Responsable</h3>
+                <ul class="info-list">
+                    <li><i class="fas fa-user-shield" style="color: var(--warning);"></i> Tuteur légal : <strong style="margin-left: auto; color: var(--text-dark);">{{ eleve.nom_tuteur|default:"Non renseigné" }}</strong></li>
+                    <li><i class="fas fa-phone" style="color: var(--success);"></i> Téléphone : <strong style="margin-left: auto; color: var(--text-dark);">{{ eleve.telephone_tuteur|default:"-" }}</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-card" style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="nav-tabs" style="padding: 15px 25px 0 25px;">
+                <div class="tab active" data-target="tab-historique">Parcours</div>
+                <div class="tab" data-target="tab-resultats">Bulletins</div>
+                <div class="tab" data-target="tab-finances">Scolarité</div>
+            </div>
+
+            <div style="padding: 0 25px 25px 25px; flex-grow: 1;">
+                
+                <div id="tab-historique" class="tab-pane active">
+                    <h4 style="margin: 0 0 20px 0; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Historique des inscriptions</h4>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        {% for hist in historique_inscriptions %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: {% if hist.annee_scolaire == annee_active %}var(--primary-light){% else %}#f8fafc{% endif %}; border-radius: 12px; border: 1px solid {% if hist.annee_scolaire == annee_active %}#bfdbfe{% else %}var(--border-color){% endif %};">
+                            <div>
+                                <strong style="display: block; color: var(--text-dark); font-size: 1.05rem; font-weight: 700;">{{ hist.classe.nom }}</strong>
+                                <span style="font-size: 0.85rem; color: var(--text-main); font-weight: 500;">Année scolaire : {{ hist.annee_scolaire.nom }}</span>
+                            </div>
+                            {% if hist.annee_scolaire == annee_active %}
+                                <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em;">ACTIF</span>
+                            {% else %}
+                                <span style="background: #e2e8f0; color: var(--text-main); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em;">ARCHIVÉ</span>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <p style="color: var(--text-muted); text-align: center; padding: 30px; font-style: italic;">Aucun historique d'inscription disponible.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div id="tab-resultats" class="tab-pane">
+                    <h4 style="margin: 0 0 20px 0; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Notes obtenues en {{ annee_active.nom }}</h4>
+                    <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                        <i class="fas fa-star fa-2x" style="margin-bottom: 10px; color: #cbd5e1;"></i>
+                        <p style="margin: 0; font-size: 0.95rem;">Le module récapitulatif des moyennes est en cours de traitement.</p>
+                    </div>
+                </div>
+
+                <div id="tab-finances" class="tab-pane">
+                    <h4 style="margin: 0 0 20px 0; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Frais de scolarité & Mensualités</h4>
+                    <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                        <i class="fas fa-wallet fa-2x" style="margin-bottom: 10px; color: #cbd5e1;"></i>
+                        <p style="margin: 0; font-size: 0.95rem;">Aucun arriéré ou historique de paiement lié à cette fiche.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Gestion active des onglets boutons
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Masquage de tous les conteneurs
+                const panes = document.querySelectorAll('.tab-pane');
+                panes.forEach(pane => pane.classList.remove('active'));
+
+                // Affichage du bon panneau cible
+                const targetId = this.getAttribute('data-target');
+                const targetPane = document.getElementById(targetId);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

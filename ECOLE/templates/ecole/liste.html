@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>🏫 Mes Établissements</h2>
+    
+</div>
+
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+    {% for e in ecoles %}
+    <div class="card" style="text-align: center; border-top: 4px solid var(--primary);">
+        {% if e.logo %}
+            <img src="{{ e.logo.url }}" alt="Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px;">
+        {% else %}
+            <div style="font-size: 40px; margin-bottom: 10px;">🏫</div>
+        {% endif %}
+        
+        <h3 style="margin: 10px 0;">{{ e.nom }}</h3>
+        <p style="color: #666; font-size: 0.9em;">📍 {{ e.adresse|default:"Adresse non définie" }}</p>
+        <p style="font-weight: bold;">📞 {{ e.telephone }}</p>
+        
+        <hr style="opacity: 0.2; margin: 15px 0;">
+        
+        <a href="{% url 'dashboard_ecole' e.id %}" class="btn" style="width: 80%;">Entrer dans l'école</a>
+    </div>
+    {% empty %}
+    <p>Aucune école n'est rattachée à votre compte.</p>
+    {% endfor %}
+</div>
+{% endblock %}

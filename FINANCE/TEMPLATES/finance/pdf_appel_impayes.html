@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* Interface Filtre Écran */
+    .control-card { margin-bottom: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .form-inline { display: flex; gap: 12px; flex-wrap: wrap; }
+    .form-inline select { padding: 0.8rem; border-radius: 8px; border: 1px solid #cbd5e1; flex: 1; min-width: 180px; outline: none; background: white; font-family: inherit; }
+    .form-inline select:focus { border-color: #3b82f6; }
+    
+    /* Layout de Simulation Document A4 */
+    .document-container { background: #e2e8f0; padding: 2rem 1rem; border-radius: 12px; min-height: 100vh; display: flex; justify-content: center; }
+    .a4-page { background: white; width: 21cm; min-height: 29.7cm; padding: 2cm; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 4px; box-sizing: border-box; position: relative; }
+    
+    /* Typographie & Tableaux Spécifiques Rapport */
+    .report-title { text-align: center; margin-bottom: 2.5rem; }
+    .report-title h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: #000; }
+    .divider { width: 80px; height: 3px; background: #000; margin: 12px auto; }
+    
+    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 2rem; border: 1px solid #000; padding: 12px; background: #f8fafc; }
+    .meta-item { display: flex; flex-direction: column; text-align: center; }
+    .meta-item small { color: #64748b; font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 3px; }
+    .meta-item strong { font-size: 1rem; color: #0f172a; text-transform: uppercase; }
+    
+    .table-report { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .table-report th, .table-report td { border: 1px solid #000; padding: 12px 10px; font-size: 0.95rem; color: #000; }
+    .table-report th { background-color: #f1f5f9; text-transform: uppercase; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; }
+    .table-report td { height: 35px; vertical-align: middle; } /* Hauteur définie pour l'écriture */
+
+    .report-footer { margin-top: 3.5rem; }
+    .signature-row { display: flex; justify-content: space-between; margin-top: 2.5rem; }
+    .signature-box { text-align: center; border-top: 1px dashed #000; width: 220px; padding-top: 10px; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; }
+
+    /* RULES DIRECTES POUR L'IMPRESSION REALISTE */
+    @media print {
+        .no-print, .navbar, .sidebar, nav, header, .control-card { display: none !important; }
+        body { background: white !important; padding: 0; margin: 0; }
+        .document-container { background: transparent !important; padding: 0 !important; margin: 0 !important; display: block !important; }
+        .a4-page { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; min-height: auto !important; }
+        .meta-grid { background: transparent !important; }
+        .table-report th { background-color: #eaeff2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .table-report tr { page-break-inside: avoid !important; }
+        @page { size: A4; margin: 1.5cm; }
+    }
+</style>
+
+<div class="control-card no-print">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin:0; color: #0f172a; font-size: 1.3rem;"><i class="fas fa-clipboard-list" style="color: #f59e0b;"></i> Génération de la feuille d'appel</h3>
+        <button onclick="window.print()" class="btn" style="background: #10b981; color: white;" type="button">
+            <i class="fas fa-print"></i> Imprimer la liste de la classe
+        </button>
+    </div>
+    
+    <form method="GET" class="form-inline">
+        <select name="classe" required>
+            <option value="">-- Sélectionner la Classe --</option>
+            {% for c in classes %}
+                <option value="{{ c.id }}" {% if request.GET.classe == c.id|stringformat:"i" %}selected{% endif %}>{{ c.nom }}</option>
+            {% endfor %}
+        </select>
+        
+        <select name="mois">
+            {% for num, nom in MOIS_CHOICES %} 
+                <option value="{{ num }}" {% if request.GET.mois == num|stringformat:"i" %}selected{% endif %}>{{ nom }}</option>
+            {% endfor %}
+        </select>
+        
+        <button type="submit" class="btn" style="background: #3b82f6; color: white; padding: 0 2rem; border-radius: 8px;">Afficher le document</button>
+    </form>
+</div>
+
+<!-- Zone d'affichage Format A4 -->
+<div class="document-container">
+    <div class="a4-page" id="document-appel">
+        
+        <div class="report-title">
+            <h2>LISTE DES RELIQUATS </h2>
+            <div class="divider"></div>
+            
+            <div class="meta-grid">
+                <div class="meta-item">
+                    <small>Classe</small>
+                    <strong>{{ classe_nom|default:"................." }}</strong>
+                </div>
+                <div class="meta-item">
+                    <small>Mois de référence</small>
+                    <strong>{{ mois_nom|default:"................." }}</strong>
+                </div>
+                <div class="meta-item">
+                    <small>Date d'édition</small>
+                    <strong>{{ "now"|date:"d/m/Y" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <table class="table-report">
+            <thead>
+                <tr>
+                    <th style="width: 6%; text-align: center;">N°</th>
+                    <th style="width: 44%;">Nom & Prénoms</th>
+                    <th style="width: 20%; text-align: right;">Reste à Payer</th>
+                    <th style="width: 30%; text-align: center;">Émargement / Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ins in resultats %}
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: #475569;">{{ forloop.counter }}</td>
+                    <td style="font-weight: 700; text-transform: uppercase; padding-left: 10px;">{{ ins.eleve.nom }} {{ ins.eleve.prenom }}</td>
+                    <td style="text-align: right; font-weight: bold; font-family: monospace; font-size: 1.05rem; padding-right: 10px;">
+                        {% if ins.reliquat_mois_en_cours > 0 and ins.dernier_mois_paye == mois_index %}
+                            {{ ins.reliquat_mois_en_cours }} F*
+                        {% else %}
+                            {{ ins.mensualite }} F
+                        {% endif %}
+                    </td>
+                    <td></td> 
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; font-style: italic; color: #555;">
+                        Sélectionnez une classe valide ou aucun élève insolvable trouvé pour ce filtre.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if resultats %}
+        <div class="report-footer">
+            <p style="font-size: 0.85rem; margin: 0 0 30px 0; line-height: 1.4; color: #1e293b;">
+                <em>* Signale un reliquat partiel restant dû sur le mois en cours.</em><br>
+                Nombre total de dossiers en anomalie : <strong>{{ resultats|length }}</strong>
+            </p>
+            
+            <div class="signature-row">
+                <div class="signature-box">Visa Surveillance</div>
+                <div class="signature-box">Visa Comptabilité</div>
+            </div>
+        </div>
+        {% endif %}
+        
+    </div>
+</div>
+
+{% endblock %}

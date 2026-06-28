@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #1e293b; }
+    .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; font-family: inherit; transition: all 0.3s ease; }
+    .form-control:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); background: white; }
+    .card-modern { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 30px; border-top: 5px solid #10b981; }
+    .btn-submit { background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.3s; padding: 15px; text-align: center; }
+    .btn-submit:hover { background: #059669; }
+    .btn-cancel { background: #94a3b8; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: background 0.3s; padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; }
+    .btn-cancel:hover { background: #64748b; }
+</style>
+
+<div style="max-width: 600px; margin: 0 auto; padding-top: 20px;">
+    <div class="card-modern">
+        <h2 style="margin-top: 0; margin-bottom: 5px; color: #0f172a;"><i class="fas fa-edit" style="color: #10b981;"></i> Modifier la classe</h2>
+        <p style="color: #64748b; margin-bottom: 30px; font-size: 0.9em;">Édition de : <strong style="color: #1e293b; font-size: 1.1em;">{{ classe.nom }}</strong></p>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div style="display: grid; gap: 20px;">
+                {% for field in form %}
+                <div class="form-group">
+                    <label>{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <small style="color: #ef4444; margin-top: 5px; display: block;"><i class="fas fa-exclamation-circle"></i> {{ field.errors.0 }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 35px;">
+                <button type="submit" class="btn-submit" style="flex: 2;">
+                    <i class="fas fa-check-circle"></i> Sauvegarder les modifications
+                </button>
+                <a href="{% url 'liste_classes' ecole.id %}" class="btn-cancel" style="flex: 1;">
+                    Retour
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

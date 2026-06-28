@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --success: #10b981;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .page-header {
+        padding: 2rem 0 1.5rem 0;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+    .page-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin: 0 0 6px 0; }
+    .page-header p { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+
+    .annees-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem; margin-top: 1rem;
+    }
+
+    .annee-card {
+        background: white; border-radius: 16px; padding: 1.5rem;
+        border: 1px solid var(--border-color); position: relative;
+        transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;
+        min-height: 140px;
+    }
+    .annee-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(15,23,42,0.02); }
+    
+    .annee-card.is-active { border-color: var(--success); background: #f0fdf4; }
+    .annee-title { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+    
+    .badge-status {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+    .badge-active { background: #d1fae5; color: #065f46; }
+    .badge-archive { background: #f1f5f9; color: #475569; }
+
+    .btn-activate {
+        width: 100%; padding: 0.65rem; background: var(--text-dark); color: white;
+        border: none; border-radius: 9px; font-weight: 700; font-size: 0.85rem;
+        cursor: pointer; text-decoration: none; text-align: center; display: block;
+        transition: background 0.2s; box-sizing: border-box;
+    }
+    .btn-activate:hover { background: var(--primary); }
+
+    .current-label {
+        width: 100%; padding: 0.65rem; background: var(--success); color: white;
+        border-radius: 9px; font-weight: 700; font-size: 0.85rem;
+        text-align: center; display: block; box-sizing: border-box;
+    }
+</style>
+
+<div class="page-header">
+    <h2>Changer d'Année Scolaire / Exercice</h2>
+    <p>Sélectionnez l'année sur laquelle vous souhaitez basculer l'établissement informatique.</p>
+</div>
+
+
+
+<div class="annees-grid">
+    {% for annee in annees %}
+        <div class="annee-card {% if annee.est_active %}is-active{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 class="annee-title">Année : {{ annee.nom }}</h3>
+                {% if annee.est_active %}
+                    <span class="badge-status badge-active"><i class="fas fa-eye"></i> Active</span>
+                {% else %}
+                    <span class="badge-status badge-archive"><i class="fas fa-archive"></i> Archivée</span>
+                {% endif %}
+            </div>
+
+            <div>
+                {% if annee.est_active %}
+                    <span class="current-label"><i class="fas fa-check"></i> Session en cours</span>
+                {% else %}
+                    <a href="{% url 'changer_annee_active' ecole.id annee.id %}" 
+                       class="btn-activate"
+                       onclick="return confirm('Voulez-vous vraiment basculer l\'affichage sur l\'année {{ annee.nom }} ?')">
+                        <i class="fas fa-exchange-alt"></i> Activer cette année
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">
+            <i class="fas fa-folder-open fa-2x" style="margin-bottom: 0.5rem; display: block;"></i>
+            Aucune année scolaire trouvée.
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

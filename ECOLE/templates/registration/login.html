@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 100px auto;">
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 20px;">Connexion</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div style="margin-bottom: 15px;">
+                <label>Nom d'utilisateur</label>
+                <input type="text" name="username" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-main);">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label>Mot de passe</label>
+                <input type="password" name="password" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-main);">
+            </div>
+            <button type="submit" class="btn" style="width: 100%; padding: 12px;">Se connecter</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

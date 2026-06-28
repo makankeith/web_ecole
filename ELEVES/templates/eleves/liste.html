@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .import-zone { background: #f0fdf4; border: 1px dashed #22c55e; border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+    .table-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #e2e8f0; }
+    .modern-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .modern-table th { background: #f8fafc; padding: 15px 20px; color: #475569; font-weight: 600; font-size: 0.85em; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+    .modern-table td { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: middle; }
+    .modern-table tr:hover td { background: #f8fafc; }
+    .btn-import { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .btn-import:hover { background: #059669; }
+    .btn-action { color: #3b82f6; background: #eff6ff; padding: 8px 12px; border-radius: 6px; text-decoration: none; transition: 0.2s; display: inline-block; }
+    .btn-action:hover { background: #dbeafe; color: #1d4ed8; }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <h2 style="margin: 0; color: #0f172a;"><i class="fas fa-user-graduate"></i> Liste des Élèves</h2>
+        <p style="color: #64748b; margin-top: 5px;">Année en cours : <strong style="color: #2563eb;">{{ annee_active.nom|default:"Non configurée" }}</strong></p>
+    </div>
+    <a href="{% url 'ajouter_eleve' ecole.id %}" class="btn" style="background: #0f172a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <i class="fas fa-plus"></i> Nouvel Élève
+    </a>
+</div>
+
+<div class="import-zone">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-file-excel" style="color: #10b981; font-size: 1.5rem;"></i>
+        <div>
+            <h4 style="margin: 0; color: #065f46; font-size: 0.95rem;">Importation rapide via Excel</h4>
+            <span style="font-size: 0.8rem; color: #166534;">Inscrivez plusieurs élèves en un clic.</span>
+        </div>
+    </div>
+    <form action="{% url 'import_eleves_excel' ecole.id %}" method="POST" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 10px;">
+        {% csrf_token %}
+        <input type="file" name="file_excel" accept=".xlsx, .xls" required style="font-size: 0.85em; padding: 5px; background: white; border-radius: 6px; border: 1px solid #bbf7d0;">
+        <button type="submit" class="btn-import"><i class="fas fa-upload"></i> Lancer l'import</button>
+    </form>
+</div>
+
+<div class="table-card">
+    <table class="modern-table"> 
+        <thead>
+            <tr>
+                <th style="width: 35%;">Identité de l'élève</th>
+                <th style="width: 25%;">Classe ({{ annee_active.nom }})</th>
+                <th style="width: 25%;">Contact Tuteur</th>
+                <th style="width: 15%; text-align: center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ins in inscriptions %}
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 35px; height: 35px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: bold; font-size: 0.8em;">
+                            {{ ins.eleve.prenom|make_list|first }}{{ ins.eleve.nom|make_list|first }}
+                        </div>
+                        <div>
+                            <strong style="display: block; color: #0f172a;">{{ ins.eleve.nom }}</strong>
+                            <span style="font-size: 0.9em; color: #64748b;">{{ ins.eleve.prenom }}</span>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span style="background: #eff6ff; color: #2563eb; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85em;">
+                        {{ ins.classe.nom }}
+                    </span>
+                </td>
+                <td>
+                    <div style="font-size: 0.9em;">
+                        {% if ins.eleve.telephone_tuteur %}
+                            <i class="fas fa-phone-alt" style="color: #cbd5e1; margin-right: 5px;"></i> {{ ins.eleve.telephone_tuteur }}
+                        {% else %}
+                            <span style="color: #94a3b8; font-style: italic;">Non renseigné</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="text-align: center;">
+                    <a href="{% url 'profil_eleve' ecole.id ins.eleve.id %}" class="btn-action" title="Voir le profil">
+                        <i class="fas fa-eye"></i> Profil
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 40px; text-align: center; color: #64748b;">
+                    <i class="fas fa-inbox fa-2x" style="margin-bottom: 10px; opacity: 0.3;"></i>
+                    <p style="margin: 0;">Aucun élève inscrit pour la session {{ annee_active.nom }}.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

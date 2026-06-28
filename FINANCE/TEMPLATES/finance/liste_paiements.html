@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .filter-bar {
+        background: white; border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); border: 1px solid #f1f5f9;
+        display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+    }
+    .filter-group { flex: 1; min-width: 220px; }
+    .filter-group label { display: block; margin-bottom: 6px; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .select-modern, .input-modern {
+        width: 100%; padding: 0.7rem 1rem; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; outline: none; font-family: inherit; font-size: 0.95rem; box-sizing: border-box;
+    }
+    .select-modern:focus, .input-modern:focus { border-color: #3b82f6; background: white; }
+    
+    .data-table { width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; }
+    .data-table thead { background: #f8fafc; }
+    .data-table th { padding: 1.1rem 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
+    .data-table td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+    .data-table tbody tr:hover { background: #f8fafc; }
+    
+    .amount-badge { background: rgba(16, 185, 129, 0.08); color: #059669; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; display: inline-block; }
+    .print-btn { background: #f1f5f9; color: #475569; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .print-btn:hover { background: #cbd5e1; color: #0f172a; }
+
+    /* CSS pour l'impression propre de la liste */
+    @media print {
+        .no-print, .filter-bar, nav, sidebar, header, .navbar, .btn { display: none !important; }
+        body { background: white; color: black; padding: 0; margin: 0; }
+        .data-table { box-shadow: none; border: 1px solid #000; width: 100%; }
+        .data-table th, .data-table td { border-bottom: 1px solid #000; padding: 8px; }
+    }
+
+    @media (max-width: 768px) {
+        .data-table thead { display: none; }
+        .data-table tr { display: block; border: 1px solid #e2e8f0; margin-bottom: 1rem; border-radius: 14px; padding: 12px; background: white; }
+        .data-table td { display: flex; justify-content: space-between; align-items: center; border: none; padding: 8px 4px; text-align: right; }
+        .data-table td::before { content: attr(data-label); font-weight: 700; text-align: left; color: #64748b; font-size: 0.75rem; text-transform: uppercase; }
+    }
+</style>
+
+<div class="no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+        <h2 style="margin: 0; color: #0f172a; font-weight: 700;"><i class="fas fa-list-alt" style="color: #3b82f6; margin-right: 10px;"></i> Registre des Paiements</h2>
+        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.95rem;">Session Académique : <strong>{{ annee_active.nom }}</strong> — Total Collecté : <strong style="color: #10b981;">{{ total_collecte }} F</strong> ({{ nombre_paiements }} entrées)</p>
+    </div>
+    <button class="btn" style="background: #10b981; color: white; border: none; padding: 0.7rem 1.25rem; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" onclick="window.print()">
+        <i class="fas fa-print"></i> Imprimer le registre
+    </button>
+</div>
+
+<!-- FILTRES SYNCHRONISÉS AVEC LES PARAMÈTRES DE LA VUE PYTHON -->
+<form method="GET" class="filter-bar no-print">
+    <div class="filter-group">
+        <label>Rechercher un élève</label>
+        <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Saisir un nom ou prénom..." class="input-modern">
+    </div>
+
+    <div class="filter-group">
+        <label>Filtrer par Groupe/Classe</label>
+        <select name="classe" class="select-modern">
+            <option value="">Toutes les classes</option>
+            {% for c in classes %}
+                <option value="{{ c.id }}" {% if selected_classe == c.id|stringformat:"i" %}selected{% endif %}>
+                    {{ c.nom }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <button type="submit" class="btn" style="background: #3b82f6; color: white; border: none; padding: 0.7rem 1.5rem; height: 44px; border-radius: 10px; font-weight: 600; cursor: pointer;">
+            <i class="fas fa-filter"></i> Filtrer la liste
+        </button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="data-table" id="paiementTable">
+        <thead>
+            <tr>
+                <th>Date d'opération</th>
+                <th>Nom Complet</th>
+                <th>Mois Liquidé</th>
+                <th>Montant Versé</th>
+                <th class="no-print" style="text-align: center;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in paiements %}
+            <tr>
+                <td>
+                    <div style="font-weight: 600; color: #334155;">{{ p.date_paiement|date:"d/m/Y" }}</div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">{{ p.date_paiement|date:"H:i" }}</div>
+                </td>
+                <td>
+                    <div style="font-weight: 600; color: #0f172a;">{{ p.eleve.nom|upper }} {{ p.eleve.prenom }}</div>
+                </td>
+                <td>
+                    <span style="background: #f1f5f9; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #475569;">
+                        {{ p.get_mois_concerne_display }}
+                    </span>
+                </td>
+                <td><span class="amount-badge">{{ p.montant }} FCFA</span></td>
+                <td class="no-print" style="text-align: center;">
+                    <button class="print-btn" title="Générer le ticket de reçu" onclick="alert('Impression du reçu de {{ p.eleve.prenom }}...')">
+                        <i class="fas fa-receipt"></i>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 4rem 1rem; color: #94a3b8; background: white;">
+                    <div style="background: #f8fafc; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+                        <i class="fas fa-folder-open fa-lg" style="color: #cbd5e1;"></i>
+                    </div>
+                    <h4 style="margin:0; color: #64748b; font-weight: 600;">Aucun enregistrement comptable</h4>
+                    <p style="font-size: 0.9rem; margin-top: 4px; color: #94a3b8;">Ajustez vos filtres ou effectuez un nouvel encaissement.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Injection dynamique des labels pour un affichage responsive mobile fluide (sans CSS lourd)
+    document.querySelectorAll('#paiementTable th').forEach((th, index) => {
+        const label = th.innerText;
+        document.querySelectorAll(`#paiementTable tbody tr`).forEach(tr => {
+            const td = tr.querySelectorAll('td')[index];
+            if(td && !td.hasAttribute('colspan')) td.setAttribute('data-label', label);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --text-dark: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --bg-light: #f8fafc;
+        --success: #10b981;
+    }
+
+    .form-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        background: white;
+        padding: 2.5rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+        border: 1px solid var(--border-color);
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 { 
+        font-size: 1.8rem; 
+        font-weight: 800; 
+        color: var(--text-dark); 
+        margin: 0 0 8px 0; 
+    }
+    .page-header p { color: var(--text-muted); font-size: 1rem; margin: 0; }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-select {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        font-size: 1rem;
+        color: var(--text-dark);
+        background-color: var(--bg-light);
+        outline: none;
+        transition: all 0.2s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        background-size: 16px;
+    }
+
+    .custom-select:focus {
+        border-color: var(--primary);
+        background-color: white;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    .period-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .period-card {
+        border: 2px solid var(--border-color);
+        padding: 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-dark);
+        background: var(--bg-light);
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .period-card:hover {
+        border-color: var(--primary);
+        background: #f5f3ff;
+    }
+
+    .period-card.selected {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: var(--text-dark);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .btn-submit:hover {
+        background: var(--primary);
+    }
+</style>
+
+<div class="form-container">
+    <div class="page-header">
+        <h2><i class="fas fa-file-invoice" style="color: var(--primary);"></i> Génération des Bulletins</h2>
+        <p>Sélectionnez la classe et la période d'évaluation pour compiler les données.</p>
+    </div>
+
+    <!-- Redirection native et immuable calculée par Django -->
+    <form id="bulletinForm" method="GET" action="{% url 'NOTE:generer_bulletins_classe' ecole.id %}">
+        
+        <div class="form-group">
+            <label for="classeSelect">Classe cible</label>
+            <select id="classeSelect" name="classe_id" class="custom-select" required>
+                <option value="" disabled selected>Choisir une classe...</option>
+                {% for classe in classes %}
+                    <option value="{{ classe.id }}" data-niveau="{{ classe.niveau }}">
+                        {{ classe.nom }} ({% if classe.niveau == 'PRIMAIRE' %}Primaire{% else %}Secondaire{% endif %})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" id="periodeSection" style="display: none;">
+            <label id="periodeLabel">Période d'évaluation</label>
+            
+            <!-- Champ envoyé automatiquement contenant la période retenue -->
+            <input type="hidden" id="periodeInput" name="periode" required>
+
+            <div class="period-grid" id="periodGridContainer"></div>
+        </div>
+
+        <button type="submit" class="btn-submit">
+            <i class="fas fa-cog"></i> Lancer les calculs & Générer le PDF
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const classeSelect = document.getElementById("classeSelect");
+        const periodeSection = document.getElementById("periodeSection");
+        const periodeLabel = document.getElementById("periodeLabel");
+        const periodGridContainer = document.getElementById("periodGridContainer");
+        const periodeInput = document.getElementById("periodeInput");
+        const bulletinForm = document.getElementById("bulletinForm");
+
+        const moisPrimaire = [
+            { id: "OCTOBRE", label: "Octobre" },
+            { id: "NOVEMBRE", label: "Novembre" },
+            { id: "DECEMBRE", label: "Décembre" },
+            { id: "JANVIER", label: "Janvier" },
+            { id: "FEVRIER", label: "Février" },
+            { id: "MARS", label: "Mars" },
+            { id: "AVRIL", label: "Avril" },
+            { id: "MAI", label: "Mai" }
+        ];
+
+        const trimestresSecondaire = [
+            { id: "TRIMESTRE_1", label: "1er Trimestre" },
+            { id: "TRIMESTRE_2", label: "2ème Trimestre" },
+            { id: "TRIMESTRE_3", label: "3ème Trimestre" }
+        ];
+
+        classeSelect.addEventListener("change", function() {
+            const selectedOption = classeSelect.options[classeSelect.selectedIndex];
+            const niveau = selectedOption.getAttribute("data-niveau");
+            
+            // Nettoyage des sélections antérieures
+            periodGridContainer.innerHTML = "";
+            periodeInput.value = "";
+            periodeSection.style.display = "block";
+
+            let periodesAVisualiser = [];
+
+            if (niveau === "PRIMAIRE") {
+                periodeLabel.innerHTML = '<i class="far fa-calendar-alt"></i> Sélectionner le Mois';
+                periodesAVisualiser = moisPrimaire;
+            } else {
+                periodeLabel.innerHTML = '<i class="fas fa-layer-group"></i> Sélectionner le Trimestre';
+                periodesAVisualiser = trimestresSecondaire;
+            }
+
+            periodesAVisualiser.forEach(p => {
+                const card = document.createElement("div");
+                card.className = "period-card";
+                card.innerHTML = p.label;
+                card.setAttribute("data-id", p.id);
+
+                card.addEventListener("click", function() {
+                    document.querySelectorAll(".period-card").forEach(c => c.classList.remove("selected"));
+                    card.classList.add("selected");
+                    periodeInput.value = p.id;
+                });
+
+                periodGridContainer.appendChild(card);
+            });
+        });
+
+        bulletinForm.addEventListener("submit", function(e) {
+            if (!periodeInput.value) {
+                e.preventDefault();
+                alert("Veuillez sélectionner un bloc de période (Mois ou Trimestre) avant de lancer la compilation.");
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --success: #10b981;
+        --danger:  #ef4444;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .page-header {
+        padding: 2rem 0 1.5rem 0;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 2rem;
+        flex-wrap: wrap; gap: 1rem;
+    }
+    .page-header h2 {
+        font-size: 1.5rem; font-weight: 800;
+        color: var(--text-dark); margin: 0 0 6px 0;
+        display: flex; align-items: center; gap: 12px;
+    }
+    .page-header p { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+
+    /* Badge Année Scolaire */
+    .badge-annee {
+        background: #f0fdf4; color: #16a34a; padding: 4px 12px; 
+        border-radius: 20px; font-size: 0.8rem; font-weight: 700; 
+        border: 1px solid #bbf7d0; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .badge-annee.inactive {
+        background: #fef2f2; color: var(--danger); border-color: #fca5a5;
+    }
+
+    .btn-action {
+        padding: 0.7rem 1.5rem;
+        background: var(--primary); color: white;
+        border-radius: 10px; font-weight: 700;
+        text-decoration: none; font-size: 0.9rem;
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(79,70,229,0.15);
+    }
+    .btn-action:hover {
+        background: var(--primary-hover); color: white;
+        transform: translateY(-1px);
+    }
+
+    /* ── NOTIFICATIONS ── */
+    .alert-container { margin-bottom: 1.5rem; }
+    .alert { padding: 1rem 1.25rem; border-radius: 12px; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+
+    /* ── STATS ── */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: white; border-radius: 14px;
+        padding: 1.3rem 1.4rem;
+        border: 1px solid var(--border-color);
+        border-top: 4px solid transparent;
+        animation: slideUp 0.4s ease-out;
+    }
+    .stat-card.s-total { border-top-color: var(--danger); }
+    .stat-card.s-sal   { border-top-color: #7c3aed; }
+    .stat-card.s-ped   { border-top-color: var(--success); }
+    .stat-card.s-fonct { border-top-color: #d97706; }
+    .stat-card.s-div   { border-top-color: #94a3b8; }
+
+    .stat-label {
+        font-size: 0.72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        color: var(--text-muted); margin-bottom: 6px;
+    }
+    .stat-value { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); white-space: nowrap; }
+    .stat-sub   { font-size: 0.73rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── CARTE LISTE ── */
+    .list-card {
+        background: white; border-radius: 24px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 20px 40px rgba(15,23,42,0.03);
+        overflow: hidden;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    .list-header {
+        padding: 1.2rem 1.6rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 0.5rem;
+    }
+    .list-header-title {
+        font-weight: 800; font-size: 1rem; color: var(--text-dark);
+        display: flex; align-items: center; gap: 8px;
+    }
+
+    /* Filtres */
+    .filter-bar {
+        padding: 1rem 1.6rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: flex-end;
+        background: #fafbfc;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+    .filter-group label {
+        font-size: 0.72rem; font-weight: 700;
+        color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .filter-input {
+        height: 38px; padding: 0 0.8rem;
+        border: 2px solid var(--border-color); border-radius: 9px;
+        font-size: 0.88rem; color: var(--text-dark);
+        background: white; transition: all 0.2s; width: 100%;
+        box-sizing: border-box;
+    }
+    .filter-input:focus { border-color: var(--primary); outline: none; }
+
+    .btn-filter {
+        height: 38px; padding: 0 1.1rem;
+        background: var(--text-dark); border: none;
+        color: white; border-radius: 9px; font-weight: 700;
+        font-size: 0.85rem; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: background 0.2s;
+    }
+    .btn-filter:hover { background: #334155; }
+
+    .btn-reset {
+        height: 38px; padding: 0 0.9rem;
+        background: white; border: 2px solid var(--border-color);
+        color: var(--text-muted); border-radius: 9px; font-weight: 600;
+        font-size: 0.85rem; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .btn-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* Tableau */
+    .table-responsive { width: 100%; overflow-x: auto; }
+    .excel-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    .excel-table th {
+        background: #f8fafc; color: var(--text-muted);
+        padding: 0.9rem 1.4rem; text-align: left;
+        font-weight: 700; font-size: 0.78rem;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border-color);
+    }
+    .excel-table td {
+        padding: 0.9rem 1.4rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .excel-table tr:last-child td { border-bottom: none; }
+    .excel-table tr:hover td { background: #f8fafc; }
+
+    .badge-cat {
+        padding: 4px 10px; border-radius: 7px;
+        font-size: 0.75rem; font-weight: 700;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .badge-sal  { background: #ede9fe; color: #6d28d9; }
+    .badge-ped  { background: #d1fae5; color: #065f46; }
+    .badge-fonc { background: #fef3c7; color: #92400e; }
+    .badge-div  { background: #f1f5f9; color: #475569; }
+
+    .tfoot-row td {
+        background: #f8fafc; font-weight: 700;
+        padding: 1rem 1.4rem;
+        border-top: 2px solid var(--border-color);
+    }
+    .total-val { font-size: 1rem; font-weight: 800; color: var(--danger); }
+
+    .empty-state {
+        text-align: center; padding: 3.5rem 2rem; color: var(--text-muted);
+    }
+    .empty-state i { font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.8rem; display: block; }
+    .empty-state strong { display: block; color: var(--text-dark); margin-bottom: 4px; }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE RESPONSABILITÉ ── */
+    @media (max-width: 1100px) {
+        .stats-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+        .stats-row { grid-template-columns: 1fr 1fr; }
+        .filter-bar { flex-direction: column; align-items: stretch; }
+        .btn-filter, .btn-reset { justify-content: center; width: 100%; }
+    }
+    @media (max-width: 480px) {
+        .stats-row { grid-template-columns: 1fr; }
+    }
+</style>
+
+<!-- HEADER -->
+<div class="page-header">
+    <div>
+        <h2>
+            Dépenses
+            {% if annee_active %}
+                <span class="badge-annee"><i class="fas fa-calendar-check"></i> Actif : {{ annee_active.nom }}</span>
+            {% else %}
+                <span class="badge-annee inactive"><i class="fas fa-triangle-exclamation"></i> Aucune année active</span>
+            {% endif %}
+        </h2>
+        <p>Gestion des finances et des flux sortants de l'établissement</p>
+    </div>
+    <a href="{% url 'ajouter_depense' ecole.id %}" class="btn-action">
+        <i class="fas fa-plus"></i> Ajouter une dépense
+    </a>
+</div>
+
+<!-- MESSAGES ALERTES DJANGO -->
+
+
+<!-- STATS -->
+<div class="stats-row">
+    <div class="stat-card s-total">
+        <div class="stat-label">Global</div>
+        <div class="stat-value">{{ total|floatformat:0 }} FCFA</div>
+        <div class="stat-sub">Année {{ annee_active.nom|default:"-" }}</div>
+    </div>
+    <div class="stat-card s-sal">
+        <div class="stat-label">Salaires</div>
+        <div class="stat-value">{{ total_salaire|floatformat:0 }} FCFA</div>
+        <div class="stat-sub">Personnel</div>
+    </div>
+    <div class="stat-card s-ped">
+        <div class="stat-label">Pédagogie</div>
+        <div class="stat-value">{{ total_pedagogie|floatformat:0 }} FCFA</div>
+        <div class="stat-sub">Fournitures / Outils</div>
+    </div>
+    <div class="stat-card s-fonct">
+        <div class="stat-label">Fonctionnement</div>
+        <div class="stat-value">{{ total_fonctionnement|floatformat:0 }} FCFA</div>
+        <div class="stat-sub">Locaux & Énergie</div>
+    </div>
+    <div class="stat-card s-div">
+        <div class="stat-label">Divers</div>
+        <div class="stat-value">{{ total_divers|floatformat:0 }} FCFA</div>
+        <div class="stat-sub">Imprévus</div>
+    </div>
+</div>
+
+<!-- LISTE COMPTABILITÉ -->
+<div class="list-card">
+    <div class="list-header">
+        <span class="list-header-title">
+            <i class="fas fa-list-ul" style="color:var(--primary);"></i>
+            Historique des écritures
+        </span>
+        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">
+            {{ depenses|length }} écriture(s) trouvée(s) — <strong style="color:var(--text-dark);">{{ total_filtre|floatformat:0 }} FCFA</strong>
+        </span>
+    </div>
+
+    <form method="get" class="filter-bar">
+        <div class="filter-group">
+            <label>Catégorie</label>
+            <select name="categorie" class="filter-input">
+                <option value="">Toutes</option>
+                {% for val, label in categories %}
+                    <option value="{{ val }}" {% if val == categorie_filtre %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Du</label>
+            <input type="date" name="date_debut" class="filter-input" value="{{ date_debut }}">
+        </div>
+        <div class="filter-group">
+            <label>Au</label>
+            <input type="date" name="date_fin" class="filter-input" value="{{ date_fin }}">
+        </div>
+        <button type="submit" class="btn-filter">
+            <i class="fas fa-filter"></i> Filtrer
+        </button>
+        <a href="{% url 'liste_depenses' ecole.id %}" class="btn-reset" title="Réinitialiser les filtres">
+            <i class="fas fa-xmark"></i>
+        </a>
+    </form>
+
+    <div class="table-responsive">
+        <table class="excel-table">
+            <thead>
+                <tr>
+                    <th style="width:50px; text-align:center;">N°</th>
+                    <th>Date</th>
+                    <th>Libellé</th>
+                    <th>Catégorie comptable</th>
+                    <th style="text-align:right;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in depenses %}
+                <tr>
+                    <td style="text-align:center; color:var(--text-muted); font-size:0.85rem;">{{ forloop.counter }}</td>
+                    <td style="color:var(--text-muted); font-size:0.85rem;">{{ d.date_depense|date:"d/m/Y" }}</td>
+                    <td style="font-weight:700; color:var(--text-dark);">{{ d.libelle }}</td>
+                    <td>
+                        {% if d.categorie == 'SALAIRE' %}
+                            <span class="badge-cat badge-sal">👔 Salaires</span>
+                        {% elif d.categorie == 'PEDAGOGIE' %}
+                            <span class="badge-cat badge-ped">📚 Pédagogie</span>
+                        {% elif d.categorie == 'FONCTIONNEMENT' %}
+                            <span class="badge-cat badge-fonc">⚙️ Fonctionnement</span>
+                        {% else %}
+                            <span class="badge-cat badge-div">📦 Divers</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right; font-weight:800; color:var(--text-dark);">
+                        {{ d.montant|floatformat:0 }} FCFA
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <strong>Aucune pièce comptable</strong>
+                            Aucune dépense n'a été enregistrée pour ce filtre sur l'exercice en cours.
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if depenses %}
+            <tfoot>
+                <tr class="tfoot-row">
+                    <td colspan="4" style="text-align:right;">Total cumulé (sélection) :</td>
+                    <td style="text-align:right;" class="total-val">{{ total_filtre|floatformat:0 }} FCFA</td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .selection-card {
+        max-width: 680px; 
+        margin: 3rem auto;
+        background: #ffffff; 
+        border-radius: 24px;
+        padding: 3rem; 
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.03);
+        border: 1px solid #f1f5f9;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    .form-group { margin-bottom: 1.75rem; }
+    .form-group label { display: flex; align-items: center; gap: 8px; margin-bottom: 0.6rem; color: #475569; font-weight: 600; font-size: 0.9rem; }
+    
+    .modern-select {
+        width: 100%; 
+        height: 52px; 
+        padding: 0 1.2rem; 
+        border-radius: 12px;
+        border: 2px solid var(--border-color); 
+        outline: none; 
+        transition: all 0.2s ease;
+        background-color: #f8fafc; 
+        font-size: 1rem; 
+        color: var(--text-dark);
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1.2rem center;
+        background-size: 1.1em;
+    }
+
+    .modern-select:focus { 
+        border-color: var(--primary); 
+        background-color: #ffffff; 
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12); 
+    }
+    
+    .btn-submit-session {
+        width: 100%; 
+        height: 56px; 
+        background: var(--primary);
+        color: white; 
+        border: none; 
+        border-radius: 14px; 
+        font-weight: 700; 
+        font-size: 1.1rem;
+        cursor: pointer; 
+        transition: all 0.2s ease; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 12px;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.15);
+    }
+
+    .btn-submit-session:hover { 
+        background: var(--primary-hover);
+        transform: translateY(-1px); 
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25); 
+    }
+
+    .import-section {
+        margin-top: 3rem; 
+        padding-top: 2rem;
+        border-top: 1px dashed var(--border-color); 
+        text-align: center;
+    }
+
+    .btn-import-link {
+        display: inline-flex; 
+        align-items: center; 
+        gap: 10px;
+        color: #10b981; 
+        text-decoration: none; 
+        font-weight: 700;
+        padding: 12px 28px; 
+        border: 2px solid #10b981; 
+        border-radius: 12px; 
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .btn-import-link:hover { 
+        background: #10b981; 
+        color: #ffffff; 
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 650px) {
+        .selection-card { padding: 2rem 1.5rem; margin: 1.5rem auto; }
+        .grid-half { grid-template-columns: 1fr !important; gap: 1.75rem !important; }
+    }
+</style>
+
+<div class="selection-card">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <div style="background: #e0e7ff; width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+            <i class="fas fa-pen-nib fa-lg" style="color: var(--primary);"></i>
+        </div>
+        <h2 style="margin: 0; color: var(--text-dark); font-weight: 800; font-size: 1.8rem; letter-spacing: -0.025em;">Saisie des Notes</h2>
+        <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 0.95rem;">Configurez les paramètres pour ouvrir le registre d'évaluation</p>
+    </div>
+
+    <form action="{% url 'NOTE:saisie_grille' ecole.id %}" method="GET">
+        <div class="form-group">
+            <label for="classe-select"><i class="fas fa-graduation-cap" style="color: var(--text-muted);"></i> Sélectionner la Classe</label>
+            <select id="classe-select" name="classe" class="modern-select" required>
+                <option value="" disabled selected>-- Choisir une classe --</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}" data-niveau="{{ c.niveau }}">{{ c.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="matiere-select"><i class="fas fa-book" style="color: var(--text-muted);"></i> Sélectionner la Matière</label>
+            <select id="matiere-select" name="matiere" class="modern-select" required>
+                <option value="" id="matiere-placeholder">-- Choisissez d'abord une classe --</option>
+                {% for coeff in coefficients %}
+                <option value="{{ coeff.matiere.id }}" data-classe="{{ coeff.classe.id }}" style="display:none;">
+                    {{ coeff.matiere.nom }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="grid-half" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div class="form-group">
+                <label for="periode-select">Période académique</label>
+                <select id="periode-select" name="periode" class="modern-select" required>
+                    <option value="" disabled selected>-- Choisir --</option>
+                    {% for val, label in PERIODES %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="type-select">Type d'évaluation</label>
+                <select id="type-select" name="type_note" class="modern-select" required>
+                    <option value="" disabled selected>-- Choisir --</option>
+                    {% for val, label in TYPES_NOTES %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit-session" style="margin-top: 1rem;">
+            Ouvrir la grille de saisie <i class="fas fa-keyboard"></i>
+        </button>
+    </form>
+
+    <div class="import-section">
+        <p style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">Méthode alternative rapide</p>
+        <a href="{% url 'NOTE:import_notes_excel' ecole.id %}" class="btn-import-link">
+            <i class="fas fa-file-excel"></i> Importer via un fichier Excel
+        </a>
+    </div>
+</div>
+
+<script>
+document.getElementById('classe-select').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const niveau = selectedOption.getAttribute('data-niveau'); 
+
+    const selectPeriode = document.getElementById('periode-select');
+    const selectType = document.getElementById('type-select');
+    
+    const selectedClasseId = this.value;
+    const matiereSelect = document.getElementById('matiere-select');
+    const optionsMatiere = matiereSelect.options;
+    const placeholderMatiere = document.getElementById('matiere-placeholder');
+    
+    matiereSelect.value = ""; 
+    let count = 0;
+    for (let i = 1; i < optionsMatiere.length; i++) {
+        const opt = optionsMatiere[i];
+        if (String(opt.getAttribute('data-classe')) === String(selectedClasseId)) {
+            opt.style.display = "block";
+            opt.disabled = false;
+            count++;
+        } else {
+            opt.style.display = "none";
+            opt.disabled = true;
+        }
+    }
+    placeholderMatiere.text = count > 0 ? "-- Sélectionner la matière --" : "⚠️ Aucune matière associée à cette classe";
+
+    selectPeriode.value = ""; 
+
+    Array.from(selectPeriode.options).forEach(opt => {
+        if(opt.value === "") return;
+
+        const estTrimestre = opt.value.includes('TRIMESTRE');
+        const estAnnuel = opt.value === 'ANNUEL';
+
+        if (niveau === 'PRIMAIRE') {
+            if (estTrimestre) {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            } else {
+                opt.style.display = 'block';
+                opt.disabled = false;
+            }
+        } else if (niveau === 'SECONDAIRE') {
+            if (!estTrimestre && !estAnnuel) {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            } else {
+                opt.style.display = 'block';
+                opt.disabled = false;
+            }
+        }
+    });
+
+    selectType.value = ""; 
+    
+    Array.from(selectType.options).forEach(opt => {
+        if(opt.value === "") return;
+
+        if (niveau === 'PRIMAIRE') {
+            if (opt.value === 'MENSUELLE') {
+                opt.style.display = 'block';
+                opt.disabled = false;
+                selectType.value = 'MENSUELLE'; 
+            } else {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            }
+        } else if (niveau === 'SECONDAIRE') {
+            if (opt.value === 'MENSUELLE') {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            } else {
+                opt.style.display = 'block';
+                opt.disabled = false;
+            }
+            selectType.value = 'DEVOIR_1'; 
+        }
+    });
+});
+</script>
+
+{% endblock %}

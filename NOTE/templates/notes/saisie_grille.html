@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% load note_tags %} 
+{% block content %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --success: #10b981;
+        --danger: #ef4444;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .sticky-header {
+        position: sticky; 
+        top: 0; 
+        background: #ffffff; 
+        z-index: 100;
+        padding: 1.5rem 2rem; 
+        border-bottom: 2px solid var(--border-color);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .meta-box h2 {
+        margin: 0 0 0.5rem 0; 
+        color: var(--text-main);
+        font-weight: 800;
+        font-size: 1.5rem;
+        letter-spacing: -0.02em;
+    }
+
+    .status-badge { 
+        padding: 6px 14px; 
+        border-radius: 10px; 
+        font-size: 0.8rem; 
+        font-weight: 700; 
+        background: #e0e7ff; 
+        color: #4338ca;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .btn-save-grid {
+        width: auto; 
+        padding: 0.8rem 2rem; 
+        background: var(--success); 
+        border: none; 
+        color: white; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        font-weight: 700;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-save-grid:hover {
+        background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .table-container { 
+        background: white; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02); 
+        border: 1px solid var(--border-color);
+        margin-top: 2rem;
+    }
+
+    .excel-table { width: 100%; border-collapse: collapse; }
+    
+    .excel-table th { 
+        background: #f8fafc; 
+        color: var(--text-muted); 
+        padding: 1.1rem 1.5rem; 
+        text-align: left; 
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .excel-table td { 
+        padding: 0.75rem 1.5rem; 
+        border-bottom: 1px solid #f1f5f9; 
+        vertical-align: middle;
+        transition: background 0.15s ease;
+    }
+
+    .excel-table tr.row-active td { background: #f5f7ff !important; }
+    .excel-table tr:hover td { background: #f8fafc; }
+
+    /* Surbrillance de l'élève ciblé via le bouton "Modifier ses notes" */
+    .row-focused td { background-color: #fef9c3 !important; }
+
+    .student-name { font-weight: 700; color: var(--text-main); font-size: 1rem; }
+
+    .note-input {
+        width: 100px; 
+        height: 44px;
+        padding: 0; 
+        border: 2px solid #cbd5e1;
+        border-radius: 8px; 
+        text-align: center; 
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--text-main);
+        background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+
+    .note-input:focus { 
+        border-color: var(--primary); 
+        outline: none; 
+        background: #ffffff; 
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15); 
+    }
+    
+    .note-input::-webkit-outer-spin-button,
+    .note-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .note-input[type=number] { -moz-appearance: textfield; }
+
+    .live-badge { font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; }
+
+    @media (max-width: 650px) {
+        .excel-table th:nth-child(3), .excel-table td:nth-child(3) { display: none; }
+        .sticky-header { flex-direction: column; gap: 15px; text-align: center; padding: 1.5rem 1rem; }
+        .btn-save-grid { width: 100%; justify-content: center; }
+    }
+</style>
+
+<form id="form-notes" method="POST" action="{{ request.get_full_path }}">
+    {% csrf_token %}
+
+    <div class="sticky-header">
+        <div class="meta-box">
+            <h2>{{ matiere.nom }} — {{ classe.nom }}</h2>
+            <span class="status-badge">
+                {{ periode }} | {{ type_note }} | Barème maximum: /{{ note_max }}
+            </span>
+        </div>
+        <button type="submit" class="btn-save-grid">
+            <i class="fas fa-floppy-disk"></i> Enregistrer la grille
+        </button>
+    </div>
+
+    <div class="table-container">
+        <table class="excel-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px; text-align: center;">N°</th>
+                    <th>Nom & Prénom de l'Élève</th>
+                    <th style="text-align: center; width: 180px;">Note / {{ note_max }}</th>
+                    <th style="width: 200px;">Statut d'évaluation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in eleves %}
+                {% with note_valeur=dict_notes|get_item:e.id %}
+                
+                <tr id="row_{{ forloop.counter }}" class="{% if focus_eleve_id == e.id %}row-focused{% endif %}">
+                    <td style="text-align: center; color: var(--text-muted); font-weight: 500;">
+                        {% if focus_eleve_id == e.id %}
+                            <i class="fas fa-caret-right" style="color: #ca8a04; font-size: 1.2rem;"></i>
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="student-name">{{ e.nom|upper }} {{ e.prenom }}</span>
+                        {% if focus_eleve_id == e.id %}
+                            <span style="font-size: 0.7rem; color: #ca8a04; background: #fef08a; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">CIBLÉ</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <input type="number" step="any" min="0" max="{{ note_max }}" 
+                               name="note_{{ e.id }}" 
+                               id="note_input_{{ forloop.counter }}"
+                               value="{% if note_valeur != None %}{{ note_valeur|stringformat:'g' }}{% endif %}"
+                               placeholder="--"
+                               class="note-input"
+                               data-index="{{ forloop.counter }}"
+                               onfocus="highlightRow({{ forloop.counter }}, true)"
+                               onblur="highlightRow({{ forloop.counter }}, false)"
+                               oninput="liveUpdateStatus(this)">
+                    </td>
+                    <td>
+                        <div id="status_{{ forloop.counter }}">
+                            {% if note_valeur != None %}
+                                {% if note_valeur >= 10 and note_max == 20 or note_valeur >= 5 and note_max == 10 %}
+                                    <span class="live-badge" style="color: var(--success);"><i class="fas fa-check-circle"></i> Validé</span>
+                                {% else %}
+                                    <span class="live-badge" style="color: var(--danger);"><i class="fas fa-circle-exclamation"></i> Insuffisant</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="live-badge" style="color: var(--text-muted); font-weight: 400; font-style: italic;">En attente...</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 4rem 2rem; color: var(--text-muted);">
+                        <i class="fas fa-users-slash fa-3x" style="color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                        <span style="font-weight: 700; color: var(--text-main); font-size: 1.1rem; display: block; margin-bottom: 4px;">
+                            Aucun élève trouvé dans cette classe
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<script>
+    const noteMax = parseFloat("{{ note_max }}");
+    const totalRows = parseInt("{{ eleves|length }}");
+
+    function highlightRow(index, active) {
+        const row = document.getElementById('row_' + index);
+        if (row && !row.classList.contains('row-focused')) {
+            if (active) row.classList.add('row-active');
+            else row.classList.remove('row-active');
+        }
+    }
+
+    function liveUpdateStatus(input) {
+        const index = input.getAttribute('data-index');
+        const statusDiv = document.getElementById('status_' + index);
+        const val = parseFloat(input.value.replace(',', '.')); // Gère les virgules françaises
+
+        if (input.value === "" || isNaN(val)) {
+            statusDiv.innerHTML = `<span class="live-badge" style="color: var(--text-muted); font-weight:400; font-style:italic;">En attente...</span>`;
+            return;
+        }
+
+        const seuil = noteMax / 2;
+
+        if (val >= seuil) {
+            statusDiv.innerHTML = `<span class="live-badge" style="color: var(--success);"><i class="fas fa-check-circle"></i> Validé</span>`;
+        } else {
+            statusDiv.innerHTML = `<span class="live-badge" style="color: var(--danger);"><i class="fas fa-circle-exclamation"></i> Insuffisant</span>`;
+        }
+    }
+
+    // Navigation clavier (Flèches Haut/Bas et Entrée)
+    document.addEventListener('keydown', function(e) {
+        if (document.activeElement.classList.contains('note-input')) {
+            const currentInput = document.activeElement;
+            const currentIndex = parseInt(currentInput.getAttribute('data-index'));
+            let nextIndex = null;
+
+            if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                e.preventDefault(); 
+                nextIndex = currentIndex + 1;
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                nextIndex = currentIndex - 1;
+            }
+
+            if (nextIndex && nextIndex >= 1 && nextIndex <= totalRows) {
+                const nextInput = document.getElementById('note_input_' + nextIndex);
+                if (nextInput) {
+                    nextInput.focus();
+                    nextInput.select(); 
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

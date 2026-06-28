@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --primary-light: #e0e7ff;
+        --text-dark: #0f172a;
+        --text-main: #334155;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --card-bg: #ffffff;
+        --bg-body: #f8fafc;
+    }
+
+    /* Animation de chargement douce */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .page-header-container {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        animation: fadeInUp 0.4s ease-out;
+    }
+
+    .header-title {
+        margin: 0 0 0.5rem 0; 
+        color: var(--text-dark); 
+        font-weight: 800; 
+        font-size: 2.2rem; 
+        letter-spacing: -0.03em;
+    }
+
+    .btn-action-primary {
+        padding: 0.85rem 1.75rem;
+        background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+    }
+
+    .grid-dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.75rem;
+    }
+
+    .group-card {
+        background: var(--card-bg); 
+        border-radius: 20px; 
+        padding: 1.75rem;
+        border: 1px solid rgba(226, 232, 240, 0.8); 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Application de l'animation sur chaque carte */
+        animation: fadeInUp 0.5s ease-out forwards;
+        opacity: 0;
+    }
+
+    /* Décalage d'animation pour un effet en cascade sympa (optionnel mais stylé) */
+    .group-card:nth-child(1) { animation-delay: 0.1s; }
+    .group-card:nth-child(2) { animation-delay: 0.2s; }
+    .group-card:nth-child(3) { animation-delay: 0.3s; }
+    .group-card:nth-child(4) { animation-delay: 0.4s; }
+
+    .group-card:hover { 
+        transform: translateY(-6px); 
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: var(--primary-light); 
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .matiere-title {
+        margin: 0; 
+        color: var(--text-dark); 
+        font-size: 1.4rem; 
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+
+    .classe-info {
+        margin: 8px 0 0 0; 
+        color: var(--text-main); 
+        font-weight: 600; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        font-size: 1rem;
+        background: var(--bg-body);
+        padding: 6px 12px;
+        border-radius: 8px;
+        display: inline-flex;
+    }
+    
+    .card-tags { 
+        display: flex; 
+        gap: 8px; 
+        margin: 1.5rem 0; 
+        flex-wrap: wrap; 
+    }
+
+    .tag { 
+        padding: 6px 14px; 
+        border-radius: 20px; 
+        font-size: 0.75rem; 
+        font-weight: 700; 
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .tag-blue { background: #e0e7ff; color: #3730a3; }
+    .tag-purple { background: #fae8ff; color: #86198f; }
+    .tag-neutral { background: #f1f5f9; color: #475569; }
+    
+    .btn-detail {
+        margin-top: auto; 
+        width: 100%; 
+        padding: 0.9rem;
+        background: transparent; 
+        color: var(--primary); 
+        border: 2px solid var(--primary-light);
+        border-radius: 12px; 
+        text-align: center; 
+        text-decoration: none;
+        font-weight: 700; 
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .btn-detail i {
+        transition: transform 0.3s ease;
+    }
+
+    .btn-detail:hover { 
+        background: var(--primary); 
+        color: #ffffff; 
+        border-color: var(--primary); 
+    }
+
+    .btn-detail:hover i {
+        transform: translateX(4px); /* L'icône se décale au survol */
+    }
+
+    /* Design spécifique pour l'état vide */
+    .empty-state {
+        grid-column: 1 / -1; 
+        text-align: center; 
+        padding: 5rem 2rem; 
+        background: var(--card-bg); 
+        border-radius: 24px; 
+        border: 2px dashed var(--border-color);
+        animation: fadeInUp 0.4s ease-out;
+    }
+</style>
+
+<div class="page-header-container">
+    <div>
+        <h1 class="header-title">Dashboard des Notes</h1>
+        <p style="color: var(--text-muted); margin: 0; font-weight: 500; font-size: 1.1rem;">
+            Suivi global et gestion des évaluations par classe
+        </p>
+    </div>
+    <a href="{% url 'NOTE:selection_notes' ecole_id %}" class="btn-action-primary">
+        <i class="fas fa-plus-circle"></i> Nouvelle Saisie
+    </a>
+</div>
+
+<div class="grid-dashboard">
+    {% for g in groupes %}
+    <div class="group-card">
+        <div>
+            <div class="card-header">
+                <h3 class="matiere-title">{{ g.matiere__nom }}</h3>
+                <i class="fas fa-chart-bar" style="color: var(--primary-light); font-size: 1.5rem;"></i>
+            </div>
+            
+            <div class="classe-info">
+                <i class="fas fa-graduation-cap" style="color: var(--primary);"></i> 
+                {{ g.eleve__inscriptions__classe__nom }}
+            </div>
+        
+            <div class="card-tags">
+                <span class="tag tag-blue"><i class="fas fa-calendar-alt"></i> {{ g.periode }}</span>
+                <span class="tag tag-purple"><i class="fas fa-clipboard-check"></i> {{ g.type_note }}</span>
+                <span class="tag tag-neutral"><i class="fas fa-users"></i> {{ g.total_notes }} copies</span>
+            </div>
+        </div>
+        
+        <a href="{% url 'NOTE:detail_notes_groupe' ecole_id=ecole_id %}?classe={{ g.eleve__inscriptions__classe__id }}&matiere={{ g.matiere__id }}&periode={{ g.periode }}&type={{ g.type_note }}" 
+           class="btn-detail">
+           Consulter le rapport <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div style="background: var(--bg-body); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+            <i class="fas fa-folder-open fa-2x" style="color: var(--text-muted);"></i>
+        </div>
+        <h3 style="color: var(--text-dark); margin: 0 0 8px 0; font-size: 1.4rem; font-weight: 800;">Aucun registre trouvé</h3>
+        <p style="color: var(--text-muted); margin: 0 0 1.5rem 0; font-size: 1rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+            Il semble qu'aucune note n'ait encore été enregistrée dans le système pour cette période.
+        </p>
+        <a href="{% url 'NOTE:selection_notes' ecole_id %}" class="btn-action-primary" style="box-shadow: none;">
+            <i class="fas fa-plus"></i> Saisir les premières notes
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

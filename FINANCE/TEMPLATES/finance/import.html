@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .import-container { max-width: 800px; margin: 0 auto; }
+    .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .header-title h2 { margin: 0; color: #0f172a; font-size: 1.8rem; }
+    .header-title p { margin: 5px 0 0 0; color: #64748b; }
+    
+    .btn-back { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: all 0.2s; }
+    .btn-back:hover { background: #e2e8f0; color: #1e293b; }
+
+    .card-import { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
+    .info-structure { background: #f8fafc; border-left: 4px solid #3b82f6; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; }
+    .info-structure h4 { margin: 0 0 10px 0; color: #0f172a; font-size: 1.1rem; }
+    
+    .table-demo { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; font-size: 0.9rem; }
+    .table-demo th { background: #f1f5f9; padding: 12px; text-align: left; font-size: 0.85rem; color: #64748b; font-weight: 600; }
+    .table-demo td { padding: 12px; color: #334155; border-bottom: 1px solid #f1f5f9; }
+
+    /* Zone de glisser-déposer */
+    .drop-zone { background: #f8fafc; border: 2px dashed #94a3b8; padding: 4rem 2rem; border-radius: 16px; margin-bottom: 2rem; transition: all 0.2s ease; cursor: pointer; text-align: center; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #3b82f6; background: #eff6ff; }
+    .drop-zone.drop-success { border-color: #10b981; background: #f0fdf4; }
+    
+    .icon-container { background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: transform 0.2s; }
+    .drop-zone:hover .icon-container { transform: scale(1.05); }
+
+    .btn-submit { background: #10b981; color: white; border: none; padding: 1rem 3rem; font-size: 1.1rem; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transition: all 0.2s; display: inline-flex; align-items: center; gap: 10px; }
+    .btn-submit:hover { background: #059669; transform: translateY(-1px); }
+    
+    .alert-msg { padding: 1rem 1.5rem; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; font-weight: 500; }
+</style>
+
+<div class="import-container">
+    
+    <div class="header-flex">
+        <div class="header-title">
+            <h2><i class="fas fa-file-import" style="color: #8b5cf6;"></i> Importation Massive (CSV)</h2>
+            <p>Automatisez l'enregistrement de vos encaissements</p>
+        </div>
+        <a href="{% url 'tableau_bord_finance' ecole.id %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <div class="card-import">
+        
+        <div class="info-structure">
+            <h4><i class="fas fa-info-circle" style="color: #3b82f6;"></i> Structure requise du fichier</h4>
+            <p style="font-size: 0.95rem; color: #475569; margin: 0 0 1.2rem 0;">
+                Le fichier doit être au format <strong>.csv</strong> avec séparateur virgule ou point-virgule. 
+                L'élève doit posséder une <strong>inscription active</strong> pour l'année en cours ({{ annee_active.nom }}).
+            </p>
+            
+            <div style="overflow-x: auto;">
+                <table class="table-demo">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Montant</th>
+                            <th>Mois (N°)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600;">KEITA</td>
+                            <td>Makan</td>
+                            <td style="color: #10b981; font-weight: 700;">15000</td>
+                            <td>1 <span style="color: #94a3b8; font-style: italic;">(Octobre)</span></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600;">DIARRA</td>
+                            <td>Adama</td>
+                            <td style="color: #10b981; font-weight: 700;">25000</td>
+                            <td>3 <span style="color: #94a3b8; font-style: italic;">(Décembre)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" style="text-align: center;">
+            {% csrf_token %}
+            
+            <div id="drop-zone" class="drop-zone">
+                <div id="upload-icon-container" class="icon-container">
+                    <i class="fas fa-cloud-upload-alt fa-2x" style="color: #3b82f6;" id="main-icon"></i>
+                </div>
+                <h3 id="file-name" style="margin: 0 0 10px 0; color: #0f172a; font-size: 1.3rem;">Cliquez ou glissez votre fichier ici</h3>
+                <p style="margin: 0; color: #64748b; font-size: 0.9rem;">Formats acceptés : .csv (Max 5 Mo)</p>
+                <input type="file" name="file" id="file-input" accept=".csv" required style="display: none;">
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-rocket"></i> Lancer l'importation
+            </button>
+        </form>
+    </div>
+
+    {% if messages %}
+        <div style="margin-top: 1.5rem;">
+        {% for message in messages %}
+            <div class="alert-msg" 
+                style="{% if message.tags == 'success' %} background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;
+                {% elif message.tags == 'warning' %} background: #fffbeb; color: #b45309; border: 1px solid #fde68a;
+                {% else %} background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; {% endif %}">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-times-circle{% endif %} fa-lg"></i>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    const mainIcon = document.getElementById('main-icon');
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+        if (e.target.files.length > 0) handleFileSelection(e.target.files[0]);
+    };
+
+    dropZone.ondragover = (e) => { 
+        e.preventDefault(); 
+        dropZone.classList.add('drag-over');
+    };
+    
+    dropZone.ondragleave = () => { 
+        dropZone.classList.remove('drag-over');
+    };
+    
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if(e.dataTransfer.files.length > 0) {
+            const file = e.dataTransfer.files[0];
+            if (file.name.endsWith('.csv')) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelection(file);
+            } else {
+                alert("Veuillez sélectionner uniquement un fichier CSV.");
+            }
+        }
+    };
+
+    function handleFileSelection(file) {
+        fileName.innerHTML = `<span style="color: #10b981; font-weight: 600;">${file.name}</span>`;
+        dropZone.classList.add('drop-success');
+        mainIcon.className = 'fas fa-file-csv fa-2x';
+        mainIcon.style.color = '#10b981';
+    }
+</script>
+{% endblock %}

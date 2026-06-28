@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .header-finance {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        padding: 2.5rem; border-radius: 20px; color: white; margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+    }
+    .filter-container {
+        display: flex; gap: 12px; margin-top: 1.5rem; justify-content: center; flex-wrap: wrap;
+    }
+    .modern-input {
+        border: 1px solid #cbd5e1; padding: 0.75rem 1rem; border-radius: 10px; outline: none; font-family: inherit; font-size: 0.95rem;
+    }
+    .modern-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    
+    .student-card {
+        background: white; border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+        border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;
+        transition: all 0.2s ease; gap: 1.5rem;
+    }
+    .student-card:hover { border-color: #3b82f6; box-shadow: 0 6px 12px rgba(0,0,0,0.03); }
+    .badge-status { background: #f1f5f9; color: #475569; padding: 0.4rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    
+    .btn-pay { background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-pay:hover { background: #059669; }
+
+    @media (max-width: 992px) {
+        .student-card { flex-direction: column; align-items: flex-start; }
+        .payment-form { width: 100%; justify-content: space-between; border-top: 1px dashed #e2e8f0; padding-top: 1rem; }
+    }
+    @media (max-width: 576px) {
+        .payment-form { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+        .payment-form > div, .payment-form select, .payment-form button { width: 100% !important; }
+    }
+</style>
+
+<div class="header-finance">
+    <div style="text-align: center;">
+        <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700;"><i class="fas fa-wallet" style="margin-right: 10px;"></i> Module de Caisse & Encaissements</h2>
+        <p style="opacity: 0.8; margin: 6px 0 0 0; font-size: 0.95rem;">Enregistrement sécurisé des mensualités pour la session <strong>{{ annee_active.nom }}</strong></p>
+    </div>
+
+    <form method="GET" class="filter-container">
+        <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Saisir le nom ou prénom de l'élève..." class="modern-input" style="min-width: 280px; width: 400px;">
+        <button type="submit" class="btn-pay" style="background: #3b82f6;"><i class="fas fa-search"></i> Rechercher</button>
+    </form>
+</div>
+
+<div class="students-list">
+    {% for ins in inscriptions %}
+    <div class="student-card">
+        <div style="display: flex; align-items: center; gap: 1.25rem;">
+            <div style="width: 48px; height: 48px; background: #eff6ff; color: #3b82f6; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem;">
+                {{ ins.eleve.nom|slice:":1" }}
+            </div>
+            <div>
+                <h4 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</h4>
+                <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span class="badge-status"><i class="fas fa-layer-group"></i> {{ ins.classe.nom }}</span>
+                    <span class="badge-status" style="background: #dcfce7; color: #15803d;">
+                        <i class="fas fa-calendar-check"></i> <strong>{{ ins.get_dernier_mois_paye_display}}</strong>
+                    </span>
+                    {% if ins.reliquat_mois_en_cours > 0 %}
+                    <span class="badge-status" style="background: #fef2f2; color: #b91c1c;">
+                        <i class="fas fa-hand-holding-dollar"></i> Reliquat dû : <strong>{{ ins.reliquat_mois_en_cours }} F</strong>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" class="payment-form" style="display: flex; gap: 12px; align-items: center;">
+            {% csrf_token %}
+            <input type="hidden" name="inscription_id" value="{{ ins.id }}">
+            
+            <div style="position: relative;">
+                <input type="number" name="montant" 
+                       value="{% if ins.reliquat_mois_en_cours > 0 %}{{ ins.reliquat_mois_en_cours }}{% else %}{{ ins.mensualite }}{% endif %}" 
+                       class="modern-input" style="width: 130px; font-weight: 700; padding-right: 30px; color: #0f172a;" required min="0">
+                <span style="position: absolute; right: 12px; top: 10px; color: #94a3b8; font-weight: 600; font-size: 0.85rem;">F</span>
+            </div>
+
+            <select name="mois_concerne" class="modern-input" style="background: white; cursor: pointer; font-weight: 500;" required>
+                {% for val, label in MOIS_CHOICES %}
+                    <option value="{{ val }}" {% if ins.dernier_mois_paye|add:1 == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn-pay"><i class="fas fa-check-double"></i> Encaisser</button>
+        </form>
+    </div>
+    {% empty %}
+    <div style="text-align: center; padding: 4rem 1rem; color: #64748b; background: white; border-radius: 16px; border: 2px dashed #e2e8f0;">
+        <i class="fas fa-user-search fa-3x" style="margin-bottom: 1rem; color: #cbd5e1;"></i>
+        <h4 style="margin: 0; color: #334155; font-weight: 600;">Aucun dossier trouvé</h4>
+        <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: #94a3b8;">Saisissez un nom d'élève valide dans la barre supérieure pour débuter l'encaissement.</p>
+    </div>
+    {% endfor %}
+</div>			
+{% endblock %}

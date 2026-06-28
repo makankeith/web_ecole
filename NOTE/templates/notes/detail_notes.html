@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --text-dark: #0f172a;
+        --text-main: #334155;
+        --text-muted: #64748b;
+        --border-light: #f1f5f9;
+        --primary: #4f46e5;
+    }
+
+    .detail-header {
+        background: #ffffff; 
+        padding: 2.25rem; 
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.02); 
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-light);
+    }
+
+    .badge-status {
+        background: #e0e7ff; 
+        color: #4338ca; 
+        padding: 6px 14px; 
+        border-radius: 10px; 
+        font-size: 0.8rem; 
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .btn-edit {
+        text-decoration: none;
+        color: white;
+        background: var(--primary);
+        padding: 0.8rem 1.6rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+    }
+
+    .btn-edit:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
+    }
+
+    .stats-grid {
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem; 
+        margin-bottom: 2.5rem;
+    }
+
+    .stat-card {
+        background: #ffffff; 
+        padding: 1.75rem; 
+        border-radius: 18px;
+        border: 1px solid var(--border-light);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.01);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 4px;
+    }
+    .stat-classe::before { background: var(--primary); }
+    .stat-haute::before { background: #10b981; }
+    .stat-basse::before { background: #ef4444; }
+    .stat-effectif::before { background: #f59e0b; }
+
+    .stat-label { 
+        color: var(--text-muted); 
+        font-size: 0.8rem; 
+        text-transform: uppercase; 
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value { 
+        font-size: 1.75rem; 
+        font-weight: 800; 
+        color: var(--text-dark); 
+    }
+    
+    .table-container { 
+        background: #ffffff; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        border: 1px solid var(--border-light);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.02);
+    }
+
+    .modern-table { 
+        width: 100%; 
+        border-collapse: collapse; 
+    }
+
+    .modern-table th { 
+        background: #f8fafc; 
+        padding: 1.1rem 1.5rem; 
+        text-align: left; 
+        color: #475569; 
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border-light);
+    }
+
+    .modern-table td { 
+        padding: 1.1rem 1.5rem; 
+        border-bottom: 1px solid var(--border-light); 
+        color: var(--text-main);
+    }
+
+    .modern-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modern-table tr:hover td {
+        background-color: #f8fafc;
+    }
+
+    .badge-note {
+        padding: 6px 14px; 
+        border-radius: 10px; 
+        font-weight: 700;
+        font-size: 0.95rem;
+        display: inline-block;
+        min-width: 50px;
+        text-align: center;
+    }
+
+    .note-success { background: #e8f5e9; color: #2e7d32; }
+    .note-danger { background: #ffebee; color: #c62828; }
+
+    .appreciation-span {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .appr-success { color: #2e7d32; }
+    .appr-danger { color: #c62828; }
+</style>
+
+<div class="detail-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+    <div>
+        <h1 style="margin:0 0 0.5rem 0; color: var(--text-dark); font-size: 2rem; font-weight: 800; letter-spacing: -0.025em;">{{ matiere.nom }}</h1>
+        <div style="color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; font-weight: 500;">
+            <span><i class="fas fa-graduation-cap" style="margin-right: 6px;"></i> {{ classe.nom }}</span>
+            <span><i class="fas fa-calendar" style="margin-right: 6px;"></i> {{ periode }}</span>
+            <span class="badge-status">{{ type_note }}</span>
+        </div>
+    </div>
+    <a href="{% url 'NOTE:saisie_grille' ecole.id %}?classe={{ eleve.classe.id }}&matiere=15&periode=TRIMESTRE_1&type_note=COMPOSITION" class="btn-action">
+        <i class="fas fa-pen-to-square"></i> Modifier les notes
+    </a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-classe">
+        <span class="stat-label">Moyenne Classe</span>
+        <span class="stat-value" style="color: {% if stats.moyenne < seuil %}#ef4444{% else %}var(--text-dark){% endif %};">
+            {{ stats.moyenne|default:"0"|floatformat:2 }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">/ {{ note_max }}</span>
+        </span>
+    </div>
+    <div class="stat-card stat-haute">
+        <span class="stat-label">Plus Haute Note</span>
+        <span class="stat-value" style="color: #10b981;">{{ stats.max_note|default:"-" }}</span>
+    </div>
+    <div class="stat-card stat-basse">
+        <span class="stat-label">Plus Basse Note</span>
+        <span class="stat-value" style="color: #ef4444;">{{ stats.min_note|default:"-" }}</span>
+    </div>
+    <div class="stat-card stat-effectif">
+        <span class="stat-label">Effectif Saisi</span>
+        <span class="stat-value">{{ notes.count }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">élève(s)</span></span>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="modern-table">
+        <thead>
+            <tr>
+                <th style="width: 80px; text-align: center;">Rang</th>
+                <th>Nom & Prénom</th>
+                <th style="text-align: center; width: 160px;">Note / {{ note_max }}</th>
+                <th>Appréciation</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in notes %}
+            <tr>
+                <td style="color: var(--text-muted); text-align: center; font-weight: 600;">{{ forloop.counter }}</td>
+                <td style="font-weight: 700; color: var(--text-dark);">{{ n.eleve.nom|upper }} {{ n.eleve.prenom }}</td>
+                <td style="text-align: center;">
+                    <span class="badge-note {% if n.valeur >= seuil %}note-success{% else %}note-danger{% endif %}">
+                        {{ n.valeur }}
+                    </span>
+                </td>
+                <td>
+                    <span class="appreciation-span {% if n.valeur >= seuil %}appr-success{% else %}appr-danger{% endif %}">
+                        {{ n.appreciation }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 5rem 2rem; color: var(--text-muted);">
+                    <i class="fas fa-folder-open" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 1.25rem; display: block;"></i>
+                    <p style="margin: 0; font-size: 1.1rem; font-weight: 600;">Aucune donnée enregistrée</p>
+                    <p style="margin: 4px 0 0 0; font-size: 0.95rem;">Aucune note n'a été saisie pour cette évaluation.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="margin-top: 2.5rem;">
+    <a href="{% url 'NOTE:liste_notes_groupes' ecole.id %}" style="text-decoration: none; color: var(--text-muted); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: color 0.2s;">
+        <i class="fas fa-arrow-left"></i> Retour au tableau de bord
+    </a>
+</div>
+
+{% endblock %}

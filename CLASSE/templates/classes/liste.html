@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --success: #10b981;
+    }
+
+    .class-card { 
+        background: white; 
+        border-radius: 16px; 
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05); 
+        padding: 25px; 
+        transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        position: relative; 
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .class-card:hover { 
+        transform: translateY(-4px); 
+        box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08); 
+    }
+    
+    .badge-niveau {
+        font-size: 0.75rem; 
+        padding: 5px 12px; 
+        border-radius: 20px; 
+        font-weight: 700; 
+        text-transform: uppercase;
+        display: inline-block;
+        margin-top: 6px;
+    }
+    .badge-primaire { background: #d1fae5; color: #059669; }
+    .badge-secondaire { background: #dbeafe; color: #1d4ed8; }
+    
+    .btn-add { 
+        background: #0f172a; 
+        color: #fff; 
+        padding: 12px 24px; 
+        border-radius: 10px; 
+        text-decoration: none; 
+        font-weight: 600; 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 10px; 
+        transition: background 0.2s; 
+    }
+    .btn-add:hover { background: #334155; }
+    
+    .stat-box { 
+        background: #f8fafc; 
+        padding: 15px; 
+        border-radius: 12px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin: 20px 0; 
+    }
+
+    .btn-action-view {
+        flex: 1;
+        text-align: center; 
+        background: #f1f5f9; 
+        color: #2563eb; 
+        padding: 10px; 
+        border-radius: 8px; 
+        text-decoration: none; 
+        font-weight: 700; 
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+    .btn-action-view:hover { background: #e2e8f0; }
+
+    .btn-excel-card {
+        padding: 10px 14px;
+        background: #ecfdf5;
+        color: var(--success);
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+    .btn-excel-card:hover { background: #d1fae5; }
+</style>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+    <div>
+        <h2 style="margin: 0; color: #0f172a; font-size: 1.8em;"><i class="fas fa-chalkboard"></i> Tableau de bord des Classes</h2>
+        <p style="color: #64748b; margin-top: 5px; font-size: 1.1em;">
+            {{ ecole.nom }} — <strong>{{ classes.count }}</strong> classe(s) configurée(s) 
+            {% if annee_active %}<span style="color: var(--success); font-weight: 700;">({{ annee_active.nom }})</span>{% endif %}
+        </p>
+    </div>
+
+    <div>
+        <a href="{% url 'ajouter_classe' ecole.id %}" class="btn-add">
+            <i class="fas fa-plus"></i> Nouvelle Classe
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px;">
+    {% for classe in classes %}
+    <div class="class-card" style="border-top: 5px solid {% if classe.niveau == 'PRIMAIRE' %}#10b981{% else %}#3b82f6{% endif %};">
+        
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h3 style="margin: 0; color: #1e293b; font-size: 1.4em; font-weight: 800;">{{ classe.nom }}</h3>
+                    <span class="badge-niveau {% if classe.niveau == 'PRIMAIRE' %}badge-primaire{% else %}badge-secondaire{% endif %}">
+                        {{ classe.get_niveau_display }}
+                    </span>
+                </div>
+                <a href="{% url 'modifier_classe' ecole.id classe.id %}" style="color: #94a3b8; font-size: 1.2em; transition: color 0.2s;" onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#94a3b8'" title="Modifier la structure">
+                    <i class="fas fa-edit"></i>
+                </a>
+            </div>
+
+            <div class="stat-box">
+                <div style="text-align: center; padding-right: 15px;">
+                    <span style="display: block; font-size: 1.8em; font-weight: 800; color: #2563eb;">
+                        {{ classe.total_inscrits }}
+                    </span>
+                    <span style="font-size: 0.8em; color: #64748b; font-weight: 600; text-transform: uppercase;">Inscrits</span>
+                </div>
+                <div style="text-align: right; border-left: 2px solid #e2e8f0; padding-left: 20px;">
+                    <div style="font-size: 0.75em; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 2px;">Mensualité</div>
+                    <div style="font-size: 1.2em; font-weight: 800; color: #1e293b;">{{ classe.mensualite|floatformat:0 }} <span style="font-size: 0.7em; color: #94a3b8;">FCFA</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 15px; margin-top: auto;">
+            <a href="{% url 'liste_eleves' ecole.id %}?classe={{ classe.id }}" class="btn-action-view">
+                <i class="fas fa-users"></i> Gérer les élèves
+            </a>
+            
+            <a href="{% url 'exporter_classe_excel' ecole.id classe.id %}" class="btn-excel-card" title="Exporter la liste d'élèves en Excel">
+                <i class="fas fa-file-excel fa-lg"></i>
+            </a>
+        </div>
+        
+    </div>
+    {% empty %}
+    <div style="grid-column: 1 / -1; text-align: center; padding: 80px 20px; background: white; border-radius: 12px; border: 2px dashed #cbd5e1;">
+        <i class="fas fa-school" style="font-size: 4rem; color: #e2e8f0; margin-bottom: 20px;"></i>
+        <h3 style="color: #475569; font-size: 1.5em; margin-bottom: 10px;">Aucune classe n'a été trouvée</h3>
+        <p style="color: #94a3b8;">L'établissement est vide. Cliquez sur "Nouvelle Classe" pour commencer la configuration.</p>
+        <a href="{% url 'ajouter_classe' ecole.id %}" class="btn-add" style="margin-top: 20px; background: #2563eb;">
+            <i class="fas fa-plus"></i> Créer la première classe
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

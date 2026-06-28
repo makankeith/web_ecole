@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .filter-card { background: white; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
+    
+    .form-grid { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+    .select-wrapper { flex: 1; min-width: 220px; position: relative; }
+    
+    .modern-select { padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; font-family: inherit; width: 100%; font-size: 0.95rem; color: #334155; transition: all 0.2s; appearance: none; -webkit-appearance: none;}
+    .modern-select:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .select-wrapper::after { content: '\f078'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 0.8rem; }
+
+    .btn-search { background: #3b82f6; color: white; border: none; border-radius: 10px; padding: 0.8rem 2rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; height: 100%; transition: background 0.2s; }
+    .btn-search:hover { background: #2563eb; }
+    
+    .btn-print { background: #10b981; color: white; border: none; border-radius: 8px; padding: 0.6rem 1.2rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; text-decoration: none; }
+    .btn-print:hover { background: #059669; }
+
+    .modern-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
+    .modern-table th { background: #f8fafc; color: #64748b; text-transform: uppercase; font-size: 0.8rem; padding: 1.2rem 1rem; text-align: left; font-weight: 700; border-bottom: 2px solid #e2e8f0; letter-spacing: 0.5px; }
+    .modern-table td { padding: 1.1rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+    .modern-table tr:hover td { background: #f8fafc; }
+    
+    .badge-retard { background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #fee2e2; }
+    .badge-reliquat { background: #fffbeb; color: #d97706; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #fef3c7; }
+    
+    .print-only-header { display: none; }
+
+    /* LOGIQUE D'IMPRESSION CLEAN */
+    @media print {
+        .no-print, nav, .navbar, .sidebar, .btn-search, .btn-print, form { display: none !important; }
+        body { background: white !important; color: black !important; padding: 0; margin: 0; }
+        .filter-card { border: none; box-shadow: none; padding: 0; margin: 0; }
+        .print-only-header { display: block !important; text-align: center; margin-bottom: 2.5rem; }
+        .modern-table { box-shadow: none; border: 1px solid #1e293b; border-radius: 0; }
+        .modern-table th { background: #f1f5f9 !important; color: #0f172a !important; border-bottom: 2px solid #0f172a; padding: 10px; }
+        .modern-table td { border-bottom: 1px solid #cbd5e1; padding: 10px; }
+        .badge-retard, .badge-reliquat { background: transparent !important; border: none !important; color: #000 !important; padding: 0; font-weight: bold; }
+        .badge-retard::before { content: "[RETARD] "; }
+        .badge-reliquat::before { content: "[RELIQUAT] "; }
+        @page { size: A4; margin: 1.5cm; }
+    }
+</style>
+
+<div class="filter-card no-print">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 style="margin: 0; color: #0f172a; font-size: 1.6rem;"><i class="fas fa-exclamation-circle" style="color: #ef4444;"></i> Suivi des Impayés</h2>
+            <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.95rem;">Année active : <strong>{{ annee_active.nom }}</strong></p>
+        </div>
+        {% if resultats %}
+        <button onclick="window.print()" class="btn-print">
+            <i class="fas fa-print"></i> Imprimer le rapport
+        </button>
+        {% endif %}
+    </div>
+
+    <form method="GET" class="form-grid">
+        <div class="select-wrapper">
+            <select name="classe" required class="modern-select">
+                <option value="">-- Choisir la Classe --</option>
+                {% for c in classes %}
+                    <option value="{{ c.id }}" {% if request.GET.classe == c.id|stringformat:"i" %}selected{% endif %}>{{ c.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="select-wrapper">
+            <select name="mois" class="modern-select">
+                {% for num, nom in MOIS_CHOICES %}
+                    <option value="{{ num }}" {% if request.GET.mois == num|stringformat:"i" %}selected{% endif %}>{{ nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn-search">
+            <i class="fas fa-search"></i> Filtrer les données
+        </button>
+    </form>
+</div>
+
+<!-- Zone de contenu imprimable / visualisable -->
+<div id="print-area">
+    <div class="print-only-header">
+        <h1 style="margin: 0 0 5px 0; font-size: 24px; font-weight: 800; tracking-spacing: 0.5px;">SITUATION GLOBALE DES IMPAYÉS</h1>
+        <p style="text-transform: uppercase; color: #475569; font-size: 14px; margin: 0; font-weight: 600;">
+            Classe : {{ classe_nom|default:"-" }} &nbsp;|&nbsp; Mois cible : {{ mois_nom|default:"-" }}
+        </p>
+        <div style="width: 80px; height: 2px; background: #0f172a; margin: 15px auto 0 auto;"></div>
+    </div>
+
+    {% if resultats %}
+    <div style="overflow-x: auto;">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px; text-align: center;">N°</th>
+                    <th>Nom & Prénoms</th>
+                    <th>Situation Financière</th>
+                    <th style="text-align: right; padding-right: 1.5rem;">Somme Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ins in resultats %}
+                <tr>
+                    <td style="text-align: center; font-weight: 600; color: #94a3b8;">{{ forloop.counter }}</td>
+                    <td>
+                        <div style="font-weight: 600; color: #0f172a;">{{ ins.eleve.nom|upper }} {{ ins.eleve.prenom }}</div>
+                    </td>
+                    <td>
+                        {% if ins.dernier_mois_paye < mois_index %}
+                            <span class="badge-retard"><i class="fas fa-clock no-print"></i> En retard (Arrêté à : {{ ins.get_dernier_mois_paye_display }})</span>
+                        {% else %}
+                            <span class="badge-reliquat"><i class="fas fa-adjust no-print"></i> Reliquat partiel</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; font-weight: 700; color: #dc2626; padding-right: 1.5rem; font-family: monospace; font-size: 1.05rem;">
+                        {% if ins.reliquat_mois_en_cours > 0 %} 
+                            {{ ins.reliquat_mois_en_cours }} F 
+                        {% else %} 
+                            {{ ins.mensualite }} F 
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="print-only-header" style="margin-top: 4rem; display: flex; justify-content: flex-end;">
+        <div style="text-align: center; border-top: 1px solid #000; width: 240px; padding-top: 8px; font-weight: 700; font-size: 13px;">
+            Cachet et Signature de l'Économe
+        </div>
+    </div>
+    {% else %}
+    <div class="no-print" style="text-align: center; padding: 5rem 2rem; background: white; border-radius: 16px; border: 2px dashed #e2e8f0;">
+        <div style="background: #f0fdf4; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+            <i class="fas fa-check-circle fa-2x" style="color: #10b981;"></i>
+        </div>
+        <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 1.25rem;">Rien à signaler</h3>
+        <p style="color: #64748b; margin: 0; max-width: 400px; margin: 0 auto;">Sélectionnez les filtres ci-dessus pour afficher les élèves en anomalie ou en retard de paiement.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

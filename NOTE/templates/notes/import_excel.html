@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --excel-color: #10b981;
+        --excel-dark: #059669;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    .import-card {
+        max-width: 720px; 
+        margin: 3rem auto;
+        background: #ffffff; 
+        border-radius: 24px;
+        padding: 3rem; 
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        border: 1px solid #f1f5f9;
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-dark); font-weight: 600; font-size: 0.9rem; }
+    
+    .modern-select {
+        width: 100%; 
+        height: 50px; 
+        padding: 0 1rem; 
+        border-radius: 12px;
+        border: 2px solid var(--border-color); 
+        background-color: #f8fafc;
+        transition: all 0.2s ease; 
+        font-size: 0.95rem;
+        color: var(--text-dark);
+        outline: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.1em;
+    }
+
+    .modern-select:focus {
+        border-color: var(--excel-color); 
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .file-upload-wrapper {
+        border: 2px dashed #cbd5e1; 
+        border-radius: 16px;
+        padding: 2.5rem 1.5rem; 
+        text-align: center; 
+        background: #f8fafc;
+        cursor: pointer; 
+        transition: all 0.2s ease; 
+        position: relative;
+    }
+    .file-upload-wrapper:hover { 
+        border-color: var(--excel-color); 
+        background: #f0fdf4; 
+    }
+    .file-upload-wrapper input[type="file"] {
+        position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;
+    }
+
+    .btn-import {
+        width: 100%; 
+        height: 54px; 
+        background: var(--excel-color); 
+        color: white;
+        border: none; 
+        border-radius: 12px; 
+        font-weight: 700; 
+        font-size: 1.05rem;
+        cursor: pointer; 
+        transition: all 0.2s ease; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        gap: 10px;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+    .btn-import:hover { 
+        background: var(--excel-dark); 
+        transform: translateY(-1px); 
+        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.25); 
+    }
+
+    .info-box {
+        background: #f0f9ff; 
+        border-left: 4px solid #0284c7;
+        padding: 1rem 1.25rem; 
+        border-radius: 12px; 
+        margin-bottom: 2rem;
+        display: flex; 
+        gap: 12px; 
+        align-items: center; 
+        color: #0369a1; 
+        font-size: 0.9rem;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+</style>
+
+<div class="import-card">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+        <div style="background: #d1fae5; width: 64px; height: 64px; border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+            <i class="fas fa-file-excel fa-lg" style="color: var(--excel-color);"></i>
+        </div>
+        <h2 style="margin: 0; color: var(--text-dark); font-weight: 800; font-size: 1.75rem; letter-spacing: -0.025em;">Importation Excel</h2>
+        <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 0.95rem;">Téléchargez vos évaluations d'élèves de manière automatisée</p>
+    </div>
+
+    <div class="info-box">
+        <i class="fas fa-info-circle fa-lg" style="color: #0284c7;"></i>
+        <span>Structure du fichier requis : La 1ère colonne doit contenir le <strong>Nom</strong>, la 2ème le <strong>Prénom</strong>, suivis des notes par <strong>Matière</strong> en colonnes d'en-tête.</span>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="classe-import">1. Sélectionner la Classe</label>
+            <select name="classe_id" id="classe-import" class="modern-select" required>
+                <option value="" disabled selected>-- Choisir la classe --</option>
+                {% for c in classes %}
+                <option value="{{ c.id }}" data-niveau="{{ c.niveau }}">{{ c.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div class="form-group">
+                <label for="periode-import">2. Période académique</label>
+                <select name="periode" id="periode-import" class="modern-select" required>
+                    <option value="" disabled selected>-- Période --</option>
+                    {% for val, label in PERIODES %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="type-import">3. Nature de l'évaluation</label>
+                <select name="type_note" id="type-import" class="modern-select" required>
+                    <option value="" disabled selected>-- Type --</option>
+                    {% for val, label in TYPES_NOTES %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 0.5rem; margin-bottom: 2.5rem;">
+            <label>4. Charger la feuille de calcul (.xlsx)</label>
+            <div class="file-upload-wrapper">
+                <i class="fas fa-cloud-arrow-up fa-2x" style="color: #94a3b8; margin-bottom: 12px; display: block;"></i>
+                <p id="file-name" style="color: var(--text-muted); font-weight: 600; margin: 0; font-size: 0.95rem;">Cliquez ou glissez-déposez le fichier ici</p>
+                <input type="file" name="excel_file" accept=".xlsx, .xls" required onchange="updateFileName(this)">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-import">
+            <i class="fas fa-file-import"></i> Exécuter l'importation de masse
+        </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="{% url 'NOTE:selection_notes' ecole_id %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-arrow-left"></i> Saisie manuelle sur grille
+        </a>
+    </div>
+</div>
+
+<script>
+function updateFileName(input) {
+    const fileName = input.files[0] ? input.files[0].name : "Cliquez ou glissez-déposez le fichier ici";
+    document.getElementById('file-name').innerHTML = `<span style="color: var(--excel-color); font-weight: 700;">${fileName}</span>`;
+    document.querySelector('.file-upload-wrapper').style.borderColor = "var(--excel-color)";
+    document.querySelector('.file-upload-wrapper').style.background = "#f0fdf4";
+}
+
+document.getElementById('classe-import').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const niveau = selectedOption.getAttribute('data-niveau'); 
+    
+    const selectPeriode = document.getElementById('periode-import');
+    const selectType = document.getElementById('type-import');
+
+    selectPeriode.value = "";
+    selectType.value = "";
+
+    Array.from(selectPeriode.options).forEach(opt => {
+        if(opt.value === "") return;
+        const estTrimestre = opt.value.includes('TRIMESTRE');
+        const estAnnuel = opt.value === 'ANNUEL';
+
+        if (niveau === 'PRIMAIRE') {
+            opt.style.display = estTrimestre ? 'none' : 'block';
+            opt.disabled = estTrimestre;
+        } else {
+            opt.style.display = (!estTrimestre && !estAnnuel) ? 'none' : 'block';
+            opt.disabled = (!estTrimestre && !estAnnuel);
+        }
+    });
+
+    Array.from(selectType.options).forEach(opt => {
+        if(opt.value === "") return;
+
+        if (niveau === 'PRIMAIRE') {
+            if (opt.value === 'MENSUELLE') {
+                opt.style.display = 'block';
+                opt.disabled = false;
+                selectType.value = 'MENSUELLE';
+            } else {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            }
+        } else {
+            if (opt.value === 'MENSUELLE') {
+                opt.style.display = 'none';
+                opt.disabled = true;
+            } else {
+                opt.style.display = 'block';
+                opt.disabled = false;
+            }
+            selectType.value = 'DEVOIR_1';
+        }
+    });
+});
+</script>
+
+{% endblock %}

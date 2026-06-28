@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --text-dark: #0f172a;
+        --text-main: #334155;
+        --text-muted: #64748b;
+        --border-light: #e2e8f0;
+        --primary: #4f46e5;
+    }
+
+    .page-header-box {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .btn-config {
+        text-decoration: none;
+        color: white;
+        background: var(--primary);
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
+    }
+
+    .btn-config:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+    }
+    
+    .class-section {
+        margin-bottom: 3rem;
+    }
+    
+    .class-title {
+        font-size: 1.4rem;
+        color: var(--text-dark);
+        font-weight: 800;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        letter-spacing: -0.02em;
+    }
+
+    .subject-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .subject-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.75rem;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.015);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #f1f5f9;
+        position: relative;
+    }
+
+    .subject-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0; width: 6px;
+        border-top-left-radius: 16px;
+        border-bottom-left-radius: 16px;
+    }
+
+    .subject-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+        border-color: #e2e8f0;
+    }
+
+    /* Assignation des bordures et fonds subtils par index */
+    .color-0 { border-left-color: #4f46e5; } .color-0::before { background: #4f46e5; }
+    .color-1 { border-left-color: #10b981; } .color-1::before { background: #10b981; }
+    .color-2 { border-left-color: #f59e0b; } .color-2::before { background: #f59e0b; }
+    .color-3 { border-left-color: #ef4444; } .color-3::before { background: #ef4444; }
+    .color-4 { border-left-color: #8b5cf6; } .color-4::before { background: #8b5cf6; }
+
+    .subject-info h4 { 
+        margin: 0 0 4px 0; 
+        color: var(--text-dark); 
+        font-size: 1.1rem; 
+        font-weight: 700;
+    }
+
+    .subject-info span {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        background: #f1f5f9;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    .coeff-badge {
+        background: #ffffff;
+        padding: 6px 16px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        border: 1px solid var(--border-light);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.01);
+    }
+</style>
+
+<div class="page-header-box">
+    <div>
+        <h1 style="margin: 0 0 4px 0; font-size: 2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.025em;">📚 Matières & Coefficients</h1>
+        <p style="color: var(--text-muted); margin: 0; font-size: 1rem;">Architecture structurelle globale par niveau d'enseignement</p>
+    </div>
+    <a href="{% url 'NOTE:config_matiere' ecole_id %}" class="btn-config">
+        <i class="fas fa-plus"></i> Configurer une matière
+    </a>
+</div>
+
+{% for classe in classes %}
+<div class="class-section">
+    <div class="class-title">
+        <i class="fas fa-graduation-cap" style="color: var(--primary);"></i>
+        {{ classe.nom }}
+    </div>
+
+    <div class="subject-stack">
+        {% for coeff in classe.coefficient_set.all %}
+        <!-- cycle de styles de 0 à 4 basé sur le compteur de boucle -->
+        <div class="subject-card color-{{ forloop.counter0|divisibleby:5|yesno:'0,1' }}">
+            <script>
+                // Astuce pour gérer dynamiquement un modulo 5 propre pour les classes css de couleurs
+                document.currentScript.parentElement.className = "subject-card color-" + (parseInt("{{ forloop.counter0 }}") % 5);
+            </script>
+            <div class="subject-info">
+                <h4>{{ coeff.matiere.nom }}</h4>
+                <span>ID unique: #{{ coeff.matiere.id }}</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="coeff-badge">
+                    Poids : {{ coeff.valeur }}
+                </div>
+                <button style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px;"><i class="fas fa-ellipsis-v"></i></button>
+            </div>
+        </div>
+        {% empty %}
+        <div style="padding: 2.5rem; text-align: center; color: var(--text-muted); background: #ffffff; border-radius: 16px; border: 1px dashed var(--border-light)">
+            <i class="fas fa-book-bookmark" style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+            Aucune discipline configurée pour cette classe.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% empty %}
+<div style="text-align: center; padding: 6rem 2rem; background: #ffffff; border-radius: 24px; border: 1px solid #f1f5f9;">
+    <i class="fas fa-layer-group fa-3x" style="color: #cbd5e1; margin-bottom: 1.5rem;"></i>
+    <p style="color: var(--text-dark); margin: 0; font-size: 1.2rem; font-weight: 700;">Aucune structure enregistrée</p>
+    <p style="color: var(--text-muted); margin: 6px 0 0 0; font-size: 0.95rem;">Veuillez d'abord initialiser vos classes et plans d'études.</p>
+</div>
+{% endfor %}
+
+{% endblock %}

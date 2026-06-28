@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .passation-container { max-width: 1100px; margin: 30px auto; background: #ffffff; padding: 35px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .page-title { color: #0f172a; font-size: 1.8rem; font-weight: 700; margin-top: 0; margin-bottom: 5px; }
+    .page-subtitle { color: #64748b; font-size: 1rem; margin-bottom: 30px; }
+    .select-custom { padding: 12px 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.95rem; color: #334155; background-color: #f8fafc; outline: none; min-width: 280px; transition: 0.2s; }
+    .select-custom:focus { border-color: #2563eb; background-color: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .modern-table { width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left; }
+    .modern-table th { background: #f8fafc; color: #475569; font-weight: 600; padding: 14px 16px; border-bottom: 2px solid #edf2f7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .modern-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 0.95rem; }
+    .modern-table tr:hover { background-color: #f8fafc; }
+    .action-box { margin-top: 35px; padding: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
+    .btn-generate { background: #2563eb; color: white; padding: 12px 28px; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+    .btn-generate:hover { background: #1d4ed8; transform: translateY(-1px); }
+</style>
+
+<div class="passation-container">
+    <h2 class="page-title"><i class="fas fa-exchange-alt" style="color: #2563eb; margin-right: 10px;"></i>Passation de classe en masse</h2>
+    <p class="page-subtitle">Année scolaire actuelle de traitement : <strong>{{ annee_active.nom|default:"Aucune année active" }}</strong></p>
+    
+    <!-- Étape 1 : Choix de la classe d'origine -->
+    <form method="GET" style="margin-bottom: 30px;">
+        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #334155;">Classe d'origine à traiter :</label>
+        <select name="classe" onchange="this.form.submit()" class="select-custom">
+            <option value="">-- Sélectionner la classe source --</option>
+            {% for c in classes %}
+                <option value="{{ c.id }}" {% if classe_selectionnee.id == c.id %}selected{% endif %}>{{ c.nom }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if classe_selectionnee %}
+        {% if eleves_inscrits %}
+        <form method="POST" id="formPassation">
+            {% csrf_token %}
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="color: #64748b; font-weight: 500;">{{ eleves_inscrits|length }} élève(s) trouvé(s)</span>
+            </div>
+
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;"><input type="checkbox" id="checkAll" style="transform: scale(1.2); cursor: pointer;"></th>
+                        <th>Matricule</th>
+                        <th>Nom complet</th>
+                        <th>Genre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ins in eleves_inscrits %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="eleves_ids" value="{{ ins.id }}" class="eleve-checkbox" style="transform: scale(1.2); cursor: pointer;">
+                        </td>
+                        <td style="font-weight: 600; color: #64748b;">{{ ins.eleve.matricule|default:"-" }}</td>
+                        <td style="font-weight: 600; color: #0f172a;">{{ ins.eleve.prenom }} <span style="text-transform: uppercase;">{{ ins.eleve.nom }}</span></td>
+                        <td>{{ ins.eleve.get_sexe_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Étape 2 : Choix des cibles et génération de la nouvelle année -->
+            <div class="action-box">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; flex-grow: 1;">
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 5px;">Nouvelle Année Scolaire :</label>
+                        <select name="nouvelle_annee" required class="select-custom" style="min-width: 220px;">
+                            <option value="">-- Choisir l'année --</option>
+                            {% for a in annees %}
+                                <option value="{{ a.id }}" {% if a.id == annee_active.id %}disabled style="color: #94a3b8;"{% endif %}>
+                                    {{ a.nom }} {% if a.id == annee_active.id %}(Actuelle){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 5px;">Classe de Destination :</label>
+                        <select name="nouvelle_classe" required class="select-custom" style="min-width: 220px;">
+                            <option value="">-- Choisir la classe --</option>
+                            {% for c in classes %}
+                                <option value="{{ c.id }}" {% if classe_superieure_suggeree.id == c.id %}selected{% endif %}>
+                                    {{ c.nom }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-generate">
+                    <i class="fas fa-check-circle"></i> Générer la nouvelle année
+                </button>
+            </div>
+        </form>
+        {% else %}
+            <div style="text-align: center; padding: 40px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; color: #64748b; margin-top: 20px;">
+                <i class="fas fa-users-slash style-fa" style="font-size: 2rem; margin-bottom: 10px; color: #94a3b8;"></i>
+                <p>Aucun élève n'est inscrit dans la classe de <strong>{{ classe_selectionnee.nom }}</strong> pour l'année active ({{ annee_active.nom }}).</p>
+            </div>
+        {% endif %}
+    {% else %}
+        <div style="text-align: center; padding: 50px; color: #94a3b8;">
+            <i class="fas fa-arrow-up fa-2x" style="margin-bottom: 15px; opacity: 0.6;"></i>
+            <p>Veuillez sélectionner une classe d'origine ci-dessus pour afficher ses élèves.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Script JS pour tout cocher / décocher d'un coup
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) {
+        checkAll.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.eleve-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+
+    // Sécurité avant soumission du formulaire
+    const form = document.getElementById('formPassation');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const checkedCount = document.querySelectorAll('.eleve-checkbox:checked').length;
+            if (checkedCount === 0) {
+                e.preventDefault();
+                alert("Erreur : Vous devez cocher au moins un élève avant de cliquer sur 'Générer la nouvelle année'.");
+            } else {
+                if (!confirm(`Êtes-vous sûr de vouloir transférer les ${checkedCount} élèves sélectionnés vers la nouvelle année ?`)) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

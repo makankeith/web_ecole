@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --danger: #ef4444;
+    }
+
+    .selection-card {
+        max-width: 680px;
+        margin: 2rem auto 4rem auto;
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.03);
+        border: 1px solid #f1f5f9;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    .form-group { margin-bottom: 1.75rem; }
+    .form-group label {
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 0.6rem;
+        color: #475569; font-weight: 600; font-size: 0.9rem;
+    }
+
+    .modern-input {
+        width: 100%; height: 52px;
+        padding: 0 1.2rem;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        outline: none; transition: all 0.2s ease;
+        background-color: #f8fafc;
+        font-size: 1rem; color: var(--text-dark);
+        box-sizing: border-box;
+    }
+
+    .modern-input:focus {
+        border-color: var(--primary);
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    }
+
+    /* Style en cas d'erreur sur un champ */
+    .has-error { border-color: var(--danger) !important; background-color: #fef2f2; }
+    .error-feedback { color: var(--danger); font-size: 0.85rem; margin-top: 6px; font-weight: 500; display: block; }
+
+    /* Catégories radio visuelles */
+    .cat-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    }
+
+    .cat-option { display: none; }
+
+    .cat-label {
+        display: flex; align-items: center; gap: 10px;
+        padding: 0.9rem 1.1rem; border-radius: 12px;
+        border: 2px solid var(--border-color);
+        cursor: pointer; font-weight: 600; font-size: 0.92rem;
+        color: var(--text-muted); background: #f8fafc;
+        transition: all 0.2s ease;
+    }
+    .cat-label:hover { border-color: #c7d2fe; background: #eef2ff; }
+    
+    .cat-option:checked + .cat-label {
+        background: #eef2ff;
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .btn-submit-session {
+        width: 100%; height: 56px;
+        background: var(--primary); color: white;
+        border: none; border-radius: 14px;
+        font-weight: 700; font-size: 1.1rem;
+        cursor: pointer; transition: all 0.2s ease;
+        display: flex; align-items: center; justify-content: center; gap: 12px;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.15);
+        margin-top: 1rem;
+    }
+    .btn-submit-session:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+    }
+
+    .back-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: var(--text-muted); font-weight: 600; font-size: 0.88rem;
+        text-decoration: none; margin-bottom: 1.5rem;
+        transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--text-dark); }
+
+    /* Alertes de notifications Django */
+    .alert-container { max-width: 680px; margin: 0 auto 1rem auto; }
+    .alert { padding: 1rem 1.25rem; border-radius: 12px; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 650px) {
+        .selection-card { padding: 2rem 1.5rem; margin: 1.5rem auto; }
+        .grid-half { grid-template-columns: 1fr !important; gap: 0rem; }
+        .cat-grid  { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div style="max-width: 680px; margin: 2rem auto 0 auto;">
+    <a href="{% url 'liste_depenses' ecole.id %}" class="back-link">
+        <i class="fas fa-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+{% if messages %}
+<div class="alert-container">
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="selection-card">
+
+    <div style="text-align:center; margin-bottom:2.5rem;">
+        <div style="background:#e0e7ff; width:64px; height:64px; border-radius:18px;
+                    display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem;">
+            <i class="fas fa-receipt fa-lg" style="color:var(--primary);"></i>
+        </div>
+        <h2 style="margin:0; color:var(--text-dark); font-weight:800; font-size:1.8rem; letter-spacing:-0.025em;">
+            Nouvelle Dépense
+        </h2>
+        <p style="color:var(--text-muted); margin:6px 0 12px 0; font-size:0.95rem;">
+            Enregistrer une dépense de l'établissement
+        </p>
+
+        {% if annee_active %}
+        <span style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; color:#16a34a; padding:6px 14px; border-radius:20px; font-size:0.85rem; font-weight:700; border:1px solid #bbf7d0;">
+            <i class="fas fa-business-time"></i> Exercice Actif : {{ annee_active.nom }}
+        </span>
+        {% endif %}
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label>
+                <i class="fas fa-tag" style="color:var(--text-muted);"></i>
+                Libellé de la dépense
+            </label>
+            <input type="text" name="libelle" class="modern-input {% if form.libelle.errors %}has-error{% endif %}"
+                   placeholder="Ex : Achat craies, Imprimante, Rémunération..."
+                   value="{{ form.libelle.value|default:'' }}" required>
+            {% if form.libelle.errors %}
+                <span class="error-feedback">{{ form.libelle.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div class="grid-half" style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+            <div class="form-group">
+                <label>
+                    <i class="fas fa-coins" style="color:var(--text-muted);"></i>
+                    Montant (FCFA)
+                </label>
+                <input type="number" name="montant" class="modern-input {% if form.montant.errors %}has-error{% endif %}"
+                       placeholder="0" min="0" step="any"
+                       value="{{ form.montant.value|default:'' }}" required>
+                {% if form.montant.errors %}
+                    <span class="error-feedback">{{ form.montant.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <i class="fas fa-calendar" style="color:var(--text-muted);"></i>
+                    Date de facturation
+                </label>
+                <input type="date" name="date_depense" class="modern-input {% if form.date_depense.errors %}has-error{% endif %}"
+                       value="{{ form.date_depense.value|default:today|date:'Y-m-d' }}" required>
+                {% if form.date_depense.errors %}
+                    <span class="error-feedback">{{ form.date_depense.errors.0 }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>
+                <i class="fas fa-layer-group" style="color:var(--text-muted);"></i>
+                Catégorie comptable
+            </label>
+            <div class="cat-grid">
+                <input type="radio" name="categorie" value="SALAIRE"
+                       id="cat_salaire" class="cat-option"
+                       {% if form.categorie.value == 'SALAIRE' or not form.categorie.value %}checked{% endif %}>
+                <label for="cat_salaire" class="cat-label">👔 Salaires</label>
+
+                <input type="radio" name="categorie" value="PEDAGOGIE"
+                       id="cat_pedago" class="cat-option"
+                       {% if form.categorie.value == 'PEDAGOGIE' %}checked{% endif %}>
+                <label for="cat_pedago" class="cat-label">📚 Pédagogie</label>
+
+                <input type="radio" name="categorie" value="FONCTIONNEMENT"
+                       id="cat_fonct" class="cat-option"
+                       {% if form.categorie.value == 'FONCTIONNEMENT' %}checked{% endif %}>
+                <label for="cat_fonct" class="cat-label">⚙️ Fonctionnement</label>
+
+                <input type="radio" name="categorie" value="DIVERS"
+                       id="cat_divers" class="cat-option"
+                       {% if form.categorie.value == 'DIVERS' %}checked{% endif %}>
+                <label for="cat_divers" class="cat-label">📦 Divers</label>
+            </div>
+            {% if form.categorie.errors %}
+                <span class="error-feedback">{{ form.categorie.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn-submit-session">
+            Enregistrer la dépense <i class="fas fa-floppy-disk"></i>
+        </button>
+
+    </form>
+</div>
+
+{% endblock %}
