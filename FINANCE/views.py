@@ -16,46 +16,53 @@ from ECOLE.utils import get_annee_active
 from datetime import date
 
 
+# 1. Ajoute ces deux imports tout en haut de ton fichier views.py
+import traceback
+from django.http import HttpResponse
+
+# 2. Modifie ta vue comme ceci :
 def tableau_bord_finance(request, ecole_id):
-    ecole = get_object_or_404(Ecole, id=ecole_id)
-    annee_active = get_annee_active(ecole)
+    try:
+        ecole = get_object_or_404(Ecole, id=ecole_id)
+        annee_active = get_annee_active(ecole)
 
-    if not annee_active:
-        messages.error(request, "Veuillez activer une année scolaire.")
-        return redirect('dashboard_ecole', ecole_id=ecole.id)
+        if not annee_active:
+            messages.error(request, "Veuillez activer une année scolaire.")
+            return redirect('dashboard_ecole', ecole_id=ecole.id)
 
-    # Optimisation : Utilisation de l'ORM pour faire les calculs côté base de données
-    total_encaisse = Paiement.objects.filter(
-        annee_scolaire=annee_active
-    ).aggregate(total=Sum('montant'))['total'] or 0
-    
-    nb_eleves = Inscription.objects.filter(annee_scolaire=annee_active).count()
-    
-    mois_actuel_index = datetime.now().month
-    
-    # Optimisation majeure : Remplacement de la boucle `for` par une requête `.count()`
-    nb_retardataires = Inscription.objects.filter(
-        annee_scolaire=annee_active
-    ).filter(
-        Q(dernier_mois_paye__lt=mois_actuel_index) | 
-        Q(reliquat_mois_en_cours__gt=0, dernier_mois_paye=mois_actuel_index)
-    ).count()
+        total_encaisse = Paiement.objects.filter(
+            annee_scolaire=annee_active
+        ).aggregate(total=Sum('montant'))['total'] or 0
+        
+        nb_eleves = Inscription.objects.filter(annee_scolaire=annee_active).count()
+        
+        mois_actuel_index = datetime.now().month
+        
+        nb_retardataires = Inscription.objects.filter(
+            annee_scolaire=annee_active
+        ).filter(
+            Q(dernier_mois_paye__lt=mois_actuel_index) | 
+            Q(reliquat_mois_en_cours__gt=0, dernier_mois_paye=mois_actuel_index)
+        ).count()
 
-    recent_paiements = Paiement.objects.filter(
-        annee_scolaire=annee_active
-    ).select_related('eleve').order_by('-date_paiement')[:5]
+        recent_paiements = Paiement.objects.filter(
+            annee_scolaire=annee_active
+        ).select_related('eleve').order_by('-date_paiement')[:5]
 
-    return render(request, 'finance/dashboard_finance.html', {
-        'total': total_encaisse,
-        'nb_eleves': nb_eleves,
-        'nb_retards': nb_retardataires,
-        'ecole_id': ecole_id,
-        'recent_paiements': recent_paiements,
-        'ecole': ecole,
-        'annee_active': annee_active
-    })
-
-
+        return render(request, 'finance/dashboard_finance.html', {
+            'total': total_encaisse,
+            'nb_eleves': nb_eleves,
+            'nb_retards': nb_retardataires,
+            'ecole_id': ecole_id,
+            'recent_paiements': recent_paiements,
+            'ecole': ecole,
+            'annee_active': annee_active
+        })
+        
+    except Exception as e:
+        # Si ça plante, on intercepte l'erreur et on l'affiche proprement à l'écran
+        error_message = f"<h1>Erreur 500 Capturée</h1><p><b>{str(e)}</b></p><pre>{traceback.format_exc()}</pre>"
+        return HttpResponse(error_message, status=500)
 def ajouter_paiement(request, ecole_id):
     ecole = get_object_or_404(Ecole, id=ecole_id)
     annee_active = get_annee_active(ecole)
