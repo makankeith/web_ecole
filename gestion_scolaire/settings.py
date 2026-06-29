@@ -155,7 +155,7 @@ AUTH_USER_MODEL = 'USER.User'
 LOGIN_URL = '/accounts/login/'
 
 # Où aller juste APRÈS s'être connecté
-LOGIN_REDIRECT_URL = '/ecole/'
+LOGIN_REDIRECT_URL = '/'
 
 # Où aller après s'être déconnecté
 LOGOUT_REDIRECT_URL = '/accounts/login/'
