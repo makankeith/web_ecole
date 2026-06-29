@@ -15,7 +15,7 @@ from ECOLE.models import Ecole, Inscription, AnneeScolaire
 from ECOLE.utils import get_annee_active
 from datetime import date
 
-@login_required
+
 def tableau_bord_finance(request, ecole_id):
     ecole = get_object_or_404(Ecole, id=ecole_id)
     annee_active = get_annee_active(ecole)
@@ -55,7 +55,7 @@ def tableau_bord_finance(request, ecole_id):
         'annee_active': annee_active
     })
 
-@login_required
+
 def ajouter_paiement(request, ecole_id):
     ecole = get_object_or_404(Ecole, id=ecole_id)
     annee_active = get_annee_active(ecole)
@@ -179,7 +179,7 @@ def liste_paiements(request, ecole_id):
     }
     
     return render(request, 'finance/liste_paiements.html', context)
-@login_required
+
 def liste_impayes(request, ecole_id):
     ecole = get_object_or_404(Ecole, id=ecole_id)
     annee_active = get_annee_active(ecole)
@@ -210,7 +210,7 @@ def liste_impayes(request, ecole_id):
         'ecole':ecole
     })
 
-@login_required
+
 def liste_appel_impayes(request, ecole_id):
     ecole = get_object_or_404(Ecole, id=ecole_id)
     annee_active = get_annee_active(ecole)
@@ -251,7 +251,7 @@ def liste_appel_impayes(request, ecole_id):
         
     })
 
-@login_required
+
 def import_paiements(request, ecole_id):
     ecole = get_object_or_404(Ecole, id=ecole_id)
     annee_active = get_annee_active(ecole)
