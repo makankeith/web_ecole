@@ -3,6 +3,12 @@
 {% block content %}
 <div style="max-width: 400px; margin: 100px auto;">
     <div class="card">
+        {% if form.errors %}
+    <div style="color: red; margin-bottom: 15px;">
+        <strong>Erreur :</strong> Vos identifiants sont incorrects ou votre compte n'est pas actif.
+        {{ form.non_field_errors }}
+    </div>
+{% endif %}
         <h2 style="text-align: center; margin-bottom: 20px;">Connexion</h2>
         <form method="post">
             {% csrf_token %}
