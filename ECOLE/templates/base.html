@@ -11,7 +11,6 @@
 
     <style>
         :root {
-            /* Palette de couleurs - Mode Clair */
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
             --text-main: #1e293b;
@@ -24,7 +23,6 @@
         }
 
         [data-theme="dark"] {
-            /* Palette de couleurs - Mode Sombre */
             --bg-body: #0f172a;
             --bg-card: #1e293b;
             --text-main: #f1f5f9;
@@ -57,6 +55,7 @@
             position: fixed;
             height: 100vh;
             z-index: 1000;
+            overflow-y: auto;
         }
 
         .sidebar-header {
@@ -68,27 +67,55 @@
             align-items: center;
             gap: 10px;
             border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
         }
 
         .sidebar-menu {
-            padding: 20px 0;
+            padding: 15px 0;
             flex-grow: 1;
         }
 
         .menu-item {
             display: flex;
             align-items: center;
-            padding: 12px 25px;
+            padding: 14px 25px;
             text-decoration: none;
             color: var(--text-muted);
             font-weight: 500;
             gap: 15px;
+            transition: all 0.2s ease;
         }
 
-        .menu-item:hover, .menu-item.active {
-            background-color: rgba(37, 99, 235, 0.1);
+        .menu-item i {
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            font-size: 1.05em;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(37, 99, 235, 0.08);
+            color: var(--primary);
+            padding-left: 30px;
+        }
+
+        .menu-item.active {
+            background-color: rgba(37, 99, 235, 0.12);
             color: var(--primary);
             border-right: 4px solid var(--primary);
+        }
+
+        /* Overlay pour fermer la sidebar sur mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         /* --- MAIN CONTENT --- */
@@ -112,6 +139,33 @@
             z-index: 900;
         }
 
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Bouton hamburger - caché par défaut sur desktop */
+        .hamburger-btn {
+            display: none;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 1.1em;
+            transition: all 0.2s ease;
+        }
+
+        .hamburger-btn:hover {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
         .content-container {
             padding: 30px;
             max-width: 1200px;
@@ -132,34 +186,84 @@
             cursor: pointer;
             width: 40px;
             height: 40px;
-            border-radius: 50%;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: var(--bg-body);
             border: 1px solid var(--border-color);
             color: var(--text-main);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
         }
 
-        /* --- RESPONSIVE / MEDIA QUERIES --- */
+        .theme-toggle:hover {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        /* --- RESPONSIVE --- */
         @media (max-width: 992px) {
             .sidebar {
                 width: 70px;
             }
-            .sidebar-header span, .menu-item span {
+            .sidebar-header span,
+            .menu-item span {
                 display: none;
+            }
+            .menu-item {
+                justify-content: center;
+                padding: 14px 0;
+            }
+            .menu-item:hover {
+                padding-left: 0;
             }
             .main-wrapper {
                 margin-left: 70px;
             }
         }
 
-        @media (max-width: 576px) {
+        /* À partir de 768px : hamburger + sidebar en tiroir */
+        @media (max-width: 768px) {
+            .hamburger-btn {
+                display: flex;
+            }
             .sidebar {
-                display: none; /* Cache la sidebar sur mobile */
+                width: var(--sidebar-width);
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            /* Remettre le texte visible dans la sidebar ouverte */
+            .sidebar-header span,
+            .menu-item span {
+                display: inline;
+            }
+            .menu-item {
+                justify-content: flex-start;
+                padding: 14px 25px;
+            }
+            .menu-item:hover {
+                padding-left: 30px;
             }
             .main-wrapper {
                 margin-left: 0;
+            }
+            .top-navbar {
+                padding: 0 20px;
+            }
+            .content-container {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .top-navbar {
+                padding: 0 15px;
+                height: 60px;
             }
             .content-container {
                 padding: 15px;
@@ -169,7 +273,10 @@
 </head>
 <body data-theme="light">
 
-    <aside class="sidebar">
+    <!-- Overlay sombre pour fermer la sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <i class="fas fa-graduation-cap"></i>
             <span>ECOLE PRO</span>
@@ -179,7 +286,7 @@
             {% if ecole.id %}
                 <a href="{% url 'dashboard_ecole' ecole.id %}" class="menu-item">
                     <i class="fas fa-chalkboard"></i> <span>Dashboard</span>
-
+                </a>
                 <a href="{% url 'liste_classes' ecole.id %}" class="menu-item">
                     <i class="fas fa-chalkboard"></i> <span>Classes</span>
                 </a>
@@ -189,35 +296,30 @@
                 <a href="{% url 'tableau_bord_finance' ecole.id%}" class="menu-item">
                     <i class="fas fa-wallet"></i> <span>Finances</span>
                 </a>
-                 <a href="{% url 'liste_depenses' ecole_id=ecole.id %}" class="menu-item">
-                    <i class="fas fa-chart-pie"></i> depenses
+                <a href="{% url 'liste_depenses' ecole_id=ecole.id %}" class="menu-item">
+                    <i class="fas fa-chart-pie"></i> <span>Dépenses</span>
                 </a>
                 <a href="{% url 'NOTE:liste_notes_groupes' ecole_id=ecole.id%}" class="menu-item">
-                    <i class="fas fa-file-signature"></i><span>Notes</span>
+                    <i class="fas fa-file-signature"></i> <span>Notes</span>
                 </a>
-                <a href="{% url 'NOTE:liste_matieres' ecole_id=ecole.id %}" class="menu-item {% if 'liste-matieres' in request.path %}active{% endif %}" >
-                    <i class="fas fa-layer-group"></i><span>Matières</span>
-
+                <a href="{% url 'NOTE:liste_matieres' ecole_id=ecole.id %}" class="menu-item {% if 'liste-matieres' in request.path %}active{% endif %}">
+                    <i class="fas fa-layer-group"></i> <span>Matières</span>
                 </a>
-                <a href="{% url 'NOTE:choix_bulletin' ecole.id %}" class="menu-item" >
-                    <i class="fas fa-file-invoice"></i> Gérer les Bulletins
+                <a href="{% url 'NOTE:choix_bulletin' ecole.id %}" class="menu-item">
+                    <i class="fas fa-file-invoice"></i> <span>Gérer les Bulletins</span>
                 </a>
-                <a href="{% url 'gestion_passation_masse' ecole.id %}" 
-                   class="menu-item">
-                    <i class="fas fa-random" ></i>
-                        <span>Passation de classe</span>
+                <a href="{% url 'gestion_passation_masse' ecole.id %}" class="menu-item">
+                    <i class="fas fa-random"></i> <span>Passation de classe</span>
                 </a>
                 <a href="{% url 'gestion_annees_scolaires' ecole.id %}" class="menu-item">
-                    <i class="fas fa-calendar-alt"></i> Changer d'année
+                    <i class="fas fa-calendar-alt"></i> <span>Changer d'année</span>
                 </a>
-                
-             
             {% else %}
-            <a href="/" class="menu-item">
-            <i class="fas fa-th-large"></i> <span>Mes Écoles</span>
-            </a>   
-            <p style="color: var(--text-muted); padding: 20px; font-size: 0.8em;">
-                Sélectionnez une école pour voir les options.
+                <a href="/" class="menu-item">
+                    <i class="fas fa-th-large"></i> <span>Mes Écoles</span>
+                </a>   
+                <p style="color: var(--text-muted); padding: 20px; font-size: 0.8em;">
+                    Sélectionnez une école pour voir les options.
                 </p>
             {% endif %}
         </nav>
@@ -225,8 +327,13 @@
 
     <div class="main-wrapper">
         <header class="top-navbar">
-            <div class="user-info">
-                <strong>{{ request.user.username }}</strong>
+            <div class="navbar-left">
+                <button class="hamburger-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="user-info">
+                    <strong>{{ request.user.username }}</strong>
+                </div>
             </div>
             <div class="theme-toggle" onclick="toggleTheme()">
                 <i class="fas fa-moon" id="theme-icon"></i>
@@ -240,7 +347,38 @@
     </div>
 
     <script>
-        // Fonction pour changer le thème et le sauvegarder
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // Fermer au clic sur l'overlay
+        document.getElementById('sidebarOverlay').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.remove('active');
+            this.classList.remove('active');
+        });
+
+        // Fermer automatiquement après clic sur un lien (mobile)
+        document.querySelectorAll('.menu-item').forEach(link => {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('active');
+                    document.getElementById('sidebarOverlay').classList.remove('active');
+                }
+            });
+        });
+
+        // Fermer si on redimensionne au-delà de 768px
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+            }
+        });
+
+        // Toggle thème
         function toggleTheme() {
             const body = document.body;
             const icon = document.getElementById('theme-icon');
@@ -262,7 +400,7 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.body.setAttribute('data-theme', savedTheme);
             const icon = document.getElementById('theme-icon');
-            if(savedTheme === 'dark') icon.classList.replace('fa-moon', 'fa-sun');
+            if (savedTheme === 'dark') icon.classList.replace('fa-moon', 'fa-sun');
         };
     </script>
 </body>
