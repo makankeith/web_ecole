@@ -29,12 +29,21 @@ SECRET_KEY = 'django-insecure-&xd&s7chf9%b#hl&+#r(@flljlsrqp(zqdb=+nnvpqn!t)1moa
 DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = []
+
 # Ajoute automatiquement l'URL générée par Render
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# 1. Autoriser explicitement ton domaine Render pour les requêtes POST
+CSRF_TRUSTED_ORIGINS = ['https://web-ecole.onrender.com']
 
+# 2. Dire à Django que tu es derrière un proxy sécurisé (Render)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# 3. Sécuriser les cookies (Recommandé avec DEBUG=False)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 # Application definition
 
 INSTALLED_APPS = [
